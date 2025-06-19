@@ -499,11 +499,12 @@ def find_threshold(data_dirs, min_temp, bd_thresholds):
 
 
 def main():
-    sensors = [Sensor("AC", "AC_W3096"), Sensor("DC", "DC_W3045"), 
-            Sensor("DC", "DC_W3058"), Sensor("DC", "BNL_LGAD_513"),
-            Sensor("DC", "BNL_LGAD_W3076_9_13"), Sensor("DC", "BNL_LGAD_W3076_12_13")]
-
-    sensors = [Sensor("DC", "BNL_LGAD_W3076_9_13"), Sensor("DC", "BNL_LGAD_513"), Sensor("DC", "BNL_LGAD_W3076_12_13")]
+    sensors = [
+        Sensor("AC", "AC_W3096"), Sensor("DC", "DC_W3045"), 
+        Sensor("DC", "DC_W3058"), Sensor("DC", "BNL_LGAD_513"),
+        Sensor("DC", "BNL_LGAD_W3076_9_13"), 
+        Sensor("DC", "BNL_LGAD_W3076_12_13"),
+    ]
     test_data_dirs = ["AC_W3096/Dec112024", "DC_W3058/Nov012023", "DC_W3045/Sep252023"]
     #find_threshold(test_data_dirs, min_temp=60, bd_thresholds=[{"AC": 0.2, "W3058": 0.2, "W3045": 0.2}, 0.5, 0.7])
     #thresholds = find_threshold(data_dirs, min_temp, bd_thresholds=np.linspace(.1,0.6,6))
@@ -512,6 +513,7 @@ def main():
                   "BNL_LGAD_513": 0.5, 
                   "BNL_LGAD_W3076_9_13": 0.5,
                   "BNL_LGAD_W3076_12_13": 0.5}
+    
     for sensor in sensors:
         plot_sensor(sensor, 'pad', bd_thresh=thresholds.get(sensor.name), min_temp=0)
     plot_humidity_scans("data/AC_W3096/Dec102024", thresholds["AC_W3096"])
