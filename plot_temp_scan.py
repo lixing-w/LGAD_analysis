@@ -18,8 +18,10 @@ class Sensor:
         """
         self.type = type
         self.name = name
-        self.data_dir = [os.path.join(f"data/{name}", scan) for scan in os.listdir(f"data/{name}") if not scan.startswith(".")]
-        self.data_dir = sorted(self.data_dir, key=lambda s: self.parse_file_name_order(s))
+        
+        data_dir = [os.path.join(f"data/{name}", scan) for scan in os.listdir(f"data/{name}") if not scan.startswith(".")]
+        self.data_dir = sorted(data_dir, key=lambda s: self.parse_file_name_order(s))
+        
         self.depletion_v = None
     
     def parse_file_name_order(self, file_name: str):
@@ -31,104 +33,21 @@ class Sensor:
     def __str__(self):
         return self.name
 
-def linear(x, m, b):
-    return m*x + b
+def is_close(a: float, b: float, tol: float):
+    # Compares two floats to see if their difference is less than tol
+    return abs(abs(a) - b) < tol
+   
+def temperature_to_color(temperature):
+    # Map temperature to a rainbow color (purple to red)
+    min_temp, max_temp = -60, 120
+    norm_temp = (temperature - min_temp) / (max_temp - min_temp)
+    return plt.cm.rainbow(norm_temp)
 
-def linear_fit(x_data, y_data, p0, sigmas=None):
-    popt, pconv = curve_fit(linear, xdata = x_data , ydata = y_data, p0=p0, sigma=sigmas)
-    perr= np.sqrt(np.diag(pconv))
-    residual_squared = np.sum(np.square(y_data - linear(x_data, *popt)))
-    ss_tot = np.sum((y_data - np.mean(y_data))**2)
-    r_squared = 1 - (residual_squared / ss_tot)
-    return popt, perr, np.sqrt(residual_squared), r_squared
-
-
-def fit_breakdown(xs, ys, start_idx, dist_file=None, bd_thresh=0.5):
-    """
-    Given a single IV scan, finds the breakdown voltage by fitting linear lines.
-    
-    Inputs:
-    xs - voltage data
-    ys - current data 
-    start_idx - data before this index is ignored
-    dist_file - where to save the plots
-    bd_thresh - threshold for determining breakdown
-    
-    Output:
-    a dictionary containing parameters of the fitted lines, breakdown voltage, 
-    uncertainty of breakdown voltage, and index of breakdown voltage.
-    """
-    
-    # set up data structures
-    results = {'random': {'color': 'black'}}
-    
-    # truncate data 
-    valid_xs = xs[start_idx:]
-    valid_ys = ys[start_idx:]
-    
-    # repeat 100 times to calculate uncertainty
-    rand_len = 100
-    breakdown_vals = np.zeros(rand_len)
-    pops = np.zeros((rand_len, 2)) # stores fitted line params
-    fit_range = len(valid_xs) // 2
-    # calculate linear fit for full range
-    fixed_popt, _, _, _ = linear_fit(valid_xs[:fit_range], valid_ys[:fit_range], p0=[1, -100])
-    liny_vals = linear(valid_xs, *fixed_popt)
-    pops[0] = fixed_popt
-    
-    # calculate breakdown voltage
-    for i, liny in enumerate(liny_vals):
-        if abs(valid_ys[i] - liny) < bd_thresh:
-            breakdown_vals[0] = valid_xs[i]
-                
-    # repeat rand_len times to use width for uncertainty calculation
-    select_from = range(fit_range)
-    for rand_i in range(1, rand_len):
-        indices = random.sample(select_from, k=fit_range//2) # sample half the data
-        fixed_popt, _, _, _ = linear_fit(valid_xs[indices], valid_ys[indices], p0=[1, -100])
-        liny_vals = linear(valid_xs, *fixed_popt)
-        pops[rand_i] = fixed_popt
-        for i, liny in enumerate(liny_vals):
-            if abs(valid_ys[i] - liny) < bd_thresh:
-                breakdown_vals[rand_i] = valid_xs[i]
-                
-    # plot breakdown distribution
-    plt.figure()
-    plt.hist(breakdown_vals, histtype='step', bins=20)
-    plt.ylabel('Frequency')
-    plt.xlabel('Breakdown Voltage')
-    plt.title('Breakdown Voltage Distribution From Random Ranges')
-    plt.tight_layout()
-    plt.savefig(dist_file)
-    plt.clf()
-    # saving breakdown and plotting information
-    results['random']['x'] = valid_xs
-    results['random']['y'] = linear(results['random']['x'], *pops[0])
-    results['random']['bd'] = breakdown_vals[0] # breakdown voltage
-    results['random']['bderr'] = max(np.std(breakdown_vals), 0.34) # breakdown uncertainty
-    #print('breakdown at', int(results['random']['bd']), '+/-', float(int(results['random']['bderr']*1000))/1000)
-    results['random']['bdi'] = len(valid_xs)-1 # index of breakdown
-    for i, x in enumerate(valid_xs):
-        if x > results['random']['bd']:
-            results['random']['bdi'] = i
-            break
-        
-    # keep plotting information for 10 of the random fits (100 would make plot look bad)
-    for rand_i in range(10):
-        r_name = 'random'+str(rand_i)
-        results[r_name] = dict()
-        results[r_name]['x'] = results['random']['x']
-        results[r_name]['y'] = linear(results['random']['x'], *pops[rand_i])
-        results[r_name]['bd'] = breakdown_vals[rand_i]
-        results[r_name]['bderr'] = 2
-        results[r_name]['bdi'] = len(valid_xs)-1
-        for i, x in enumerate(valid_xs):
-            if x > results[r_name]['bd']:
-                results[r_name]['bdi'] = i
-                break
-    return results
-
-# Function to parse the metadata and data from a file
+def humidity_to_color(rh):
+    min_rh, max_rh = 0, 36
+    norm_rh = (rh - min_rh) / (max_rh - min_rh)
+    return plt.cm.rainbow(norm_rh)
+     
 def parse_file(filepath: str):
     if filepath.endswith(".txt"):
         with open(filepath, 'r') as f:
@@ -153,28 +72,206 @@ def parse_file(filepath: str):
                 temperature = float(lines[i+1])
             elif ":start" in lines[i]:
                 date = lines[i+1].split(' ')[0]
+            elif "- compliance [A or V]:" in lines[i]:
+                compliance = float(lines[i].split(" ")[-1])
             elif "BEGIN" in lines[i]:
                 table_begin_idx = i+1
                 break
         # extract table data 
 
         data = np.genfromtxt(lines[table_begin_idx:-1], delimiter=None, names=['voltage', 'totalCurrent', 'pad'])
+        
+        for i in range(data.shape[0]):
+            if is_close(data[i]['totalCurrent'], compliance, 1E-7):
+                data = data[:i]
+                break
             
     else:
         raise ValueError(f"File must be .txt or .iv, given {filepath}")
     
     return temperature, date, data
 
-# Map temperature to a rainbow color (purple to red)
-def temperature_to_color(temperature):
-    min_temp, max_temp = -60, 100
-    norm_temp = (temperature - min_temp) / (max_temp - min_temp)
-    return plt.cm.rainbow(norm_temp)
+def linear(x, m, b):
+    return m*x + b
 
-def humidity_to_color(rh):
-    min_rh, max_rh = 0, 36
-    norm_rh = (rh - min_rh) / (max_rh - min_rh)
-    return plt.cm.rainbow(norm_rh)
+def linear_fit(x_data, y_data, p0, sigmas=None):
+    popt, pconv = curve_fit(linear, xdata = x_data , ydata = y_data, p0=p0, sigma=sigmas)
+    perr= np.sqrt(np.diag(pconv))
+    residual_squared = np.sum(np.square(y_data - linear(x_data, *popt)))
+    ss_tot = np.sum((y_data - np.mean(y_data))**2)
+    r_squared = 1 - (residual_squared / ss_tot)
+    return popt, perr, np.sqrt(residual_squared), r_squared
+
+def fit_breakdown(xs, ys, start_idx, dist_file=None, bd_thresh=0.5):
+    """
+    Given a single IV scan, finds the breakdown voltage by fitting linear lines.
+    
+    Inputs:
+    xs - voltage data
+    ys - current data 
+    start_idx - data before this index is ignored
+    dist_file - where to save the plots
+    bd_thresh - threshold for determining breakdown
+    
+    Output:
+    a dictionary containing parameters of the fitted lines, breakdown voltage, 
+    uncertainty of breakdown voltage, and index of breakdown voltage.
+    """
+    use_ransac = True
+    
+    # set up data structures
+    results = {'random': {'color': 'black'}}
+    
+    # truncate data 
+    valid_xs = xs[start_idx:]
+    valid_ys = ys[start_idx:]
+    assert len(valid_xs) == len(valid_ys)
+    
+    if use_ransac:
+        # repeat 1000 times, each time randomly select 2 dots from range, 
+        # fit a line, and determine the number of inliers, given a threshold
+        # (a different one from bd_thresh)
+        # lines with more inliers are more likely to be true trend, thus we can 
+        # find a distribution of breakdown voltage
+        
+        fit_range = len(valid_xs) // 2
+        
+        lines = [] # each entry is a list [slope, offset, inlier count, bd_voltage]
+        seen = set() # some dot pairs may have been selected. dedup
+        index_list = range(fit_range)
+        ransac_thresh = 0.05
+        for _ in range(1000):
+            index_pair = random.sample(index_list, 2)
+            if (index_pair[0], index_pair[1]) in seen:
+                continue
+            else:
+                seen.add((index_pair[0], index_pair[1]))
+            slope = (valid_ys[index_pair[1]] - valid_ys[index_pair[0]]) / (valid_xs[index_pair[1]] - valid_xs[index_pair[0]])
+            offset = valid_ys[index_pair[0]] - slope * valid_xs[index_pair[0]]
+            
+            pred_ys = valid_xs * slope + offset # the y's for fitted line
+            is_close_map = np.abs(pred_ys - valid_ys) < ransac_thresh 
+            inlier_count = np.sum(is_close_map)
+
+            # find the breakdown voltage with linear interpolation
+            for i in range(len(valid_ys)):
+                if abs(valid_ys[i] - pred_ys[i]) < bd_thresh:
+                    last_id_in_thresh = i
+
+            if last_id_in_thresh + 1 == len(valid_ys):
+                # last data point! just use it as is
+                bd_voltage = valid_xs[last_id_in_thresh]
+            else: 
+                # find the next data point, fit a line, solve for intersection
+                slope_inter = (valid_ys[last_id_in_thresh+1] - valid_ys[last_id_in_thresh]) / (valid_xs[last_id_in_thresh+1] - valid_xs[last_id_in_thresh])
+                offset_inter = valid_ys[last_id_in_thresh] - slope_inter * valid_xs[last_id_in_thresh]
+                bd_voltage = (offset_inter - (offset + bd_thresh)) / (slope - slope_inter)
+                
+            if bd_voltage < 0: # just a sanity check
+                continue
+            lines.append([slope, offset, inlier_count, bd_voltage])
+        
+        lines = np.array(lines)
+        # sort according to bd_voltage
+        lines = lines[np.argsort(lines[:,3])]
+        # calculate uncertainty for bd_voltage
+        # cutoff extreme values
+        cum_weights = np.cumsum(lines[:,2])
+        total_weight = cum_weights[-1]
+        
+        trim_ratio = 0.1
+        lower = trim_ratio * total_weight
+        upper = (1 - trim_ratio) * total_weight
+
+        mask = (cum_weights >= lower) & (cum_weights <= upper)
+
+        filtered_lines = lines[mask]
+        
+        mean = np.average(filtered_lines[:,3], weights=filtered_lines[:,2])
+        variance = np.average((filtered_lines[:,3] - mean)**2, weights=filtered_lines[:,2])
+        std = np.sqrt(variance)
+        std = std + 1.01
+
+        # plot breakdown distribution
+        plt.figure()
+        # plt.hist(vals, histtype='step', bins=80, weights=weights, density=True)
+        plt.scatter(lines[~mask][:,3], lines[~mask][:,2], color='purple', label=f'Outliers (Top/Bottom {int(trim_ratio*100)}%)')
+        plt.scatter(filtered_lines[:,3], filtered_lines[:,2])
+        plt.legend()
+        plt.ylabel('Weights')
+        plt.xlabel('Breakdown Voltage')
+        plt.title('Breakdown Voltage Distribution From RANSAC')
+        plt.tight_layout()
+        plt.savefig(dist_file)
+        plt.close()
+        
+        # need this so the line with most inliers is at index 0
+        lines = filtered_lines
+        lines = lines[np.argsort(-lines[:,2])]
+        
+        lines = np.delete(lines, 2, axis=1) # remove inlier_count for consistent data structure
+        
+    else:
+        # repeat 100 times to calculate uncertainty
+        rand_len = 100
+        lines = [] # each entry is a list [slope, offset, bd_voltage]
+        fit_range = len(valid_xs) // 2
+        
+        # calculate linear fit for full range
+        fixed_popt, _, _, _ = linear_fit(valid_xs[:fit_range], valid_ys[:fit_range], p0=[1, -100])
+        liny_vals = linear(valid_xs, *fixed_popt)
+        
+        # calculate breakdown voltage
+        for i, liny in enumerate(liny_vals):
+            if abs(valid_ys[i] - liny) < bd_thresh:
+                bd_voltage = valid_xs[i]
+        
+        lines.append([fixed_popt[0], fixed_popt[1], bd_voltage])
+        
+        # repeat rand_len times to use width for uncertainty calculation
+        select_from = range(fit_range)
+        for rand_i in range(1, rand_len):
+            indices = random.sample(select_from, k=fit_range//2) # sample half the data
+            fixed_popt, _, _, _ = linear_fit(valid_xs[indices], valid_ys[indices], p0=[1, -100])
+            liny_vals = linear(valid_xs, *fixed_popt)
+
+            for i, liny in enumerate(liny_vals):
+                if abs(valid_ys[i] - liny) < bd_thresh:
+                    bd_voltage = valid_xs[i]
+                
+            lines.append([fixed_popt[0], fixed_popt[1], bd_voltage])
+        
+        lines = np.array(lines)
+        # calculate uncertainty for bd_voltage
+        std = np.std(lines[:,2]) + 0.34
+        
+        # plot breakdown distribution
+        plt.figure()
+        plt.hist(lines[:,2], histtype='step', bins=20)
+        plt.ylabel('Frequency')
+        plt.xlabel('Breakdown Voltage')
+        plt.title('Breakdown Voltage Distribution From Random Ranges')
+        plt.tight_layout()
+        plt.savefig(dist_file)
+        plt.close()
+        
+    # saving breakdown and plotting information
+    results['random']['x'] = valid_xs
+    results['random']['y'] = linear(results['random']['x'], lines[0][0], lines[0][1])
+    results['random']['bd'] = lines[0][2] # breakdown voltage
+    results['random']['bderr'] = std # breakdown uncertainty
+    results['random']['bdy'] = lines[0][0] * lines[0][2] + lines[0][1] # y-coordinate of breakdown
+        
+    # keep plotting information for 10 of the random fits (100 would make plot look bad)
+    for rand_i in range(min(10, lines.shape[0])):
+        r_name = 'random'+str(rand_i)
+        results[r_name] = dict()
+        results[r_name]['x'] = results['random']['x']
+        results[r_name]['y'] = linear(results['random']['x'], lines[rand_i][0], lines[rand_i][1])
+        results[r_name]['bd'] = lines[rand_i][2]
+        results[r_name]['bderr'] = None
+        results[r_name]['bdy'] = lines[rand_i][0] * lines[rand_i][2] + lines[rand_i][1]
+    return results
 
 def plot_scans(data_dir: str, curr_type: str, min_temp: float=0, bd_thresh: float=0.5):
     """
@@ -268,12 +365,15 @@ def plot_scans(data_dir: str, curr_type: str, min_temp: float=0, bd_thresh: floa
         # Save the plot
         plot_filename = data_dir+"/"+f"{ramp_type.strip('_')}_plot"+curr_type+".png"
         plt.savefig(plot_filename)
-        plt.clf()
+        plt.close()
         if curr_type != 'pad': continue
         breakdown = dict()
 
-        if 'W3045' in data_dir: depletion=50
+        if 'W3045' in data_dir: depletion=25
         elif 'BNL_LGAD_W3076_12_13' in data_dir: depletion=10
+        elif 'BNL_LGAD_W3076_9_13' in data_dir: depletion=25
+        elif 'BNL_LGAD_513' in data_dir: depletion=10
+        elif 'AC_W3096' in data_dir: depletion=25
         else: depletion=36
         for volt, curr, temp, color in plots:
             if temp < min_temp and 'AC_W3096' in data_dir: continue
@@ -310,25 +410,25 @@ def plot_scans(data_dir: str, curr_type: str, min_temp: float=0, bd_thresh: floa
                     # plot actual breakdown fit
                     plt.plot(result['x'], result['y'], color=result['color'], linestyle='--', label='linear fit')
                     plt.plot(result['x'], result['y']+bd_thresh, color='brown', linestyle='-.', label='threshold')
-                    plt.scatter([result['bd']], [result['y'][result['bdi']]], color=result['color'], marker='*')
+                    plt.scatter([result['bd']], [[result['bdy']]], color=result['color'], marker='*')
                 else: # plot some of the random samples to visualize
                     if plotted_random: # plot without label
                         plt.plot(result['x'], result['y'], color='purple', linestyle=':')
                     else: # plot with label once
                         plt.plot(result['x'], result['y'], color='purple', linestyle=':', label='random samples')
                         plotted_random = True
-                    plt.scatter([result['bd']], [result['y'][result['bdi']]], color='purple', marker='*')
+                    plt.scatter([result['bd']], [[result['bdy']]], color='purple', marker='*')
 
             plt.xlabel("Voltage (V)")
             plt.ylabel("log(Pad Current (A))")
-            plt.title("IV Scan with breakdown for "+str(temp)+" degrees: "+str(int(breakdown[temp]['random']))+" +/- "+str(float(int(10*breakdown[temp]['randomerr']))/10)+" V")
+            plt.title(f"IV Scan with breakdown for {temp} degrees: {breakdown[temp]['random']:.1f} +/- {breakdown[temp]['randomerr']:.1f} V")
             valid_ylims = log_curr[1:][np.isfinite(log_curr[1:])]
             plt.ylim(np.min(valid_ylims)-.5, np.max(valid_ylims)+.5)
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
             plt.savefig(plot_filename)
-            plt.clf()
+            plt.close()
         # get aggregate data for plotting
         plt.figure(figsize=(10, 6))
         temperatures, breakdown_vs, breakdown_errs = [], [], []
@@ -349,7 +449,7 @@ def plot_scans(data_dir: str, curr_type: str, min_temp: float=0, bd_thresh: floa
         plt.legend()
         plt.tight_layout()
         plt.savefig(data_dir+"/"+f"{ramp_type.strip('_')}_fit_breakdown.png")
-        plt.clf()
+        plt.close()
         # return fits so that they can be plotted together
         temp_dict[ramp_type] = temperatures
         bdv_dict[ramp_type] = breakdown_vs
@@ -388,7 +488,7 @@ def plot_sensor(sensor: Sensor, curr_type: str='pad', bd_thresh: float=0.5, min_
     plt.legend()
     plt.tight_layout()
     plt.savefig(f"data/all_breakdown_fits_{sensor.name}.png")
-    plt.clf()
+    plt.close()
     
     # plot breakdown voltages over time (as a function of scan number)
     plt.figure(figsize=(10, 6))
@@ -409,7 +509,7 @@ def plot_sensor(sensor: Sensor, curr_type: str='pad', bd_thresh: float=0.5, min_
     plt.legend()
     plt.tight_layout()
     plt.savefig(f"data/breakdown_over_time_{sensor.name}.png")
-    plt.clf()
+    plt.close()
     
     # plot the overall fit
     # calculate weighted mean and its uncertainty across measurements
@@ -442,7 +542,7 @@ def plot_sensor(sensor: Sensor, curr_type: str='pad', bd_thresh: float=0.5, min_
     plt.legend()
     plt.tight_layout()
     plt.savefig(f"data/averaged_fit_{sensor.name}.png")
-    plt.clf()
+    plt.close()
 
     return slope_err, avg_sigma
 
@@ -471,7 +571,7 @@ def plot_humidity_scans(data_dir, bd_thresh):
     plt.tight_layout()
     plt.grid(True)
     plt.savefig("data/humidity_"+sensor+".png")
-    plt.clf()
+    plt.close()
     # plot leakage current at 140V (approximate operating voltage)
     plt.figure(figsize=(10, 6))
     plt.plot(np.sort(humidities), leakage_140, marker='o')
@@ -480,7 +580,7 @@ def plot_humidity_scans(data_dir, bd_thresh):
     plt.title(sensor+"-LGAD Leakage Current at 140V as Function of Relative Humidity at 21 C")
     plt.tight_layout()
     plt.savefig("data/humidity_leakage_"+sensor+".png")
-    plt.clf()
+    plt.close()
 
 
 def find_threshold(data_dirs, min_temp, bd_thresholds):
@@ -505,6 +605,7 @@ def main():
         Sensor("DC", "BNL_LGAD_W3076_9_13"), 
         Sensor("DC", "BNL_LGAD_W3076_12_13"),
     ]
+
     test_data_dirs = ["AC_W3096/Dec112024", "DC_W3058/Nov012023", "DC_W3045/Sep252023"]
     #find_threshold(test_data_dirs, min_temp=60, bd_thresholds=[{"AC": 0.2, "W3058": 0.2, "W3045": 0.2}, 0.5, 0.7])
     #thresholds = find_threshold(data_dirs, min_temp, bd_thresholds=np.linspace(.1,0.6,6))
@@ -522,3 +623,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    pass

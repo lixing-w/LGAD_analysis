@@ -1,0 +1,107 @@
+IV with two I-meter
+IV with two I-meter
+:Program Version
+13.8.2003 Moll, 4.2008 Fahrer, 6.2011 Gabrysch, 7.2019 Mateu
+:start
+21/06/2021 16:05:24
+:stop
+21/06/2021 16:06:17
+:elapsed[s]
+53.7
+:tester
+bnl
+:environment
+Probe Station (28-2-019)
+:comment
+W4-DB36 on PCB before wirebond (HV from pcb backside, Pad and GR contacted with needle)
+PT1000: 961=-10C
+:temperature[C]
+25.0
+:ToolID
+1102
+:GuardRingConnection
+1
+:Region
+0
+:Instruments
+I meter: Keithley 6487
+V source: Keithley 2410
+- integration time [ms]: 20.0
+- internal averaging: 5
+- compliance [A or V]: 1.000E-6
+:ramp up step [V], delay [s], down step [V], delay[s]
+20.0, 0.5, 20.0, 0.5
+:set voltage start [V], voltage stop [V], number of steps
+-0.0, -500.0, 40
+:measured voltage start [V], voltage stop [V], number of steps
+-0.0, -500.0, 40
+:step mode
+linear
+:Sample
+D5
+:Producer
+BNL
+:Run
+2004.0
+:Wafer
+2004.0
+:TREC
+
+:Area[cm-2]
+0.01
+:Thickness[um]
+50
+:Support_Wafer_Thickness[um]
+500
+:Resistivity[ohm.cm]
+100
+:Sample_comment
+
+:Material
+p EPI
+:Irradiation(Location,Fluence/Dose,Units,Particle,Date)
+:Annealing_history(time[min],Temp[C],Date)
+:legend
+bias [V]	Total Current [A]	Pad Current [A]
+BEGIN
+-0.000000E+0	2.824104E-10	8.182107E-13
+-1.282051E+1	-9.178639E-12	-1.232298E-11
+-2.564103E+1	3.430725E-10	-2.374208E-11
+-3.846154E+1	3.828864E-11	-3.622344E-11
+-5.128205E+1	-1.013710E-10	-4.842549E-11
+-6.410256E+1	-1.374094E-10	-6.508124E-11
+-7.692308E+1	-1.687714E-10	-8.693696E-11
+-8.974359E+1	-4.559371E-10	-1.059407E-10
+-1.025641E+2	-5.398005E-10	-1.348621E-10
+-1.153846E+2	-6.912891E-10	-1.797764E-10
+-1.282051E+2	-9.529731E-10	-2.254344E-10
+-1.410256E+2	-9.234034E-10	-2.757802E-10
+-1.538462E+2	-1.181940E-9	-3.221493E-10
+-1.666667E+2	-1.283594E-9	-3.953825E-10
+-1.794872E+2	-1.614572E-9	-4.697824E-10
+-1.923077E+2	-1.672683E-9	-5.431324E-10
+-2.051282E+2	-2.024152E-9	-6.456309E-10
+-2.179487E+2	-2.431479E-9	-7.911707E-10
+-2.307692E+2	-2.565478E-9	-9.983604E-10
+-2.435897E+2	-2.960023E-9	-1.182814E-9
+-2.564103E+2	-3.580794E-9	-1.461098E-9
+-2.692308E+2	-3.971948E-9	-1.817948E-9
+-2.820513E+2	-4.572997E-9	-2.170256E-9
+-2.948718E+2	-5.191926E-9	-2.680203E-9
+-3.076923E+2	-6.091401E-9	-3.316473E-9
+-3.205128E+2	-7.107241E-9	-4.060988E-9
+-3.333333E+2	-8.291858E-9	-5.009942E-9
+-3.461538E+2	-9.993292E-9	-6.427591E-9
+-3.589744E+2	-1.186769E-8	-8.149023E-9
+-3.717949E+2	-1.405228E-8	-1.020308E-8
+-3.846154E+2	-1.786881E-8	-1.325412E-8
+-3.974359E+2	-2.274915E-8	-1.763417E-8
+-4.102564E+2	-2.848348E-8	-2.264449E-8
+-4.230769E+2	-3.713030E-8	-3.061728E-8
+-4.358974E+2	-5.044330E-8	-4.294194E-8
+-4.487179E+2	-7.178625E-8	-5.775001E-8
+-4.615385E+2	-9.020179E-8	-7.891643E-8
+-4.743590E+2	-1.267190E-7	-1.126635E-7
+-4.871795E+2	-1.763036E-7	-1.630846E-7
+-5.000000E+2	-2.475307E-7	-2.352030E-7
+END
