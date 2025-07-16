@@ -1,0 +1,11 @@
+# This is config file for sensors.
+# N:name T:type D:avg_dep_v C:c_after_depletion,freq,temp|... R:bd_thresh L:slope,offset,avg_sigma B:temp,avg_volt,avg_humi|... 
+N:BNL_LGAD_W3045_14_14 T:None D:None C:None R:None L:None  B:20.0,245.920,nan| 
+N:BNL_LGAD_W3045_14_15 T:None D:None C:None R:None L:None  B:20.0,76.463,nan| 
+N:BNL_LGAD_W3045_14_16 T:None D:None C:None R:None L:None  B:20.0,169.506,nan| 
+N:BNL_LGAD_W3045_14_6  T:None D:None C:None R:None L:None  B:20.0,169.410,nan| 
+N:BNL_LGAD_W3045_15_16 T:None D:None C:None R:None L:None  B:20.0,167.378,nan| 
+N:BNL_LGAD_W3045_15_18 T:None D:None C:None R:None L:-1.269,194.801,0.082 B:19.8,169.672,nan|20.0,169.418,nan| 
+N:BNL_LGAD_W3045_15_6  T:None D:None C:None R:None L:None  B:20.0,169.442,nan| 
+N:LGAD_BNL_W3045_15_12 T:None D:None C:None R:None L:None  B:25.0,176.546,nan| 
+N:LGAD_BNL_W3045_15_16 T:None D:None C:None R:None L:None  B:25.0,175.031,nan| 

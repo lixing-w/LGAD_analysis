@@ -1,0 +1,6 @@
+# This is config file for sensors.
+# N:name T:type D:avg_dep_v C:c_after_depletion,freq,temp|... R:bd_thresh L:slope,offset,avg_sigma B:temp,avg_volt,avg_humi|... 
+N:BNL_LGAD_3076_12_13  T:None D:None C:None R:None L:None  B:20.0,104.385,nan| 
+N:BNL_LGAD_3076_5_14   T:None D:None C:None R:None L:0.457,94.075,0.632 B:-30.0,79.919,nan|-25.0,83.783,nan|-24.9,82.924,nan|-20.0,83.814,nan|-19.9,84.935,nan|-15.0,87.414,nan|-14.9,87.059,nan|-10.0,89.442,nan|-9.9,89.522,nan|-5.0,90.730,nan|0.0,93.948,nan|5.0,95.891,nan|10.0,98.555,nan|15.0,100.744,nan|20.0,102.914,nan|25.0,105.483,nan|30.0,108.000,nan|35.0,110.830,nan|40.0,112.155,nan| 
+N:BNL_LGAD_3076_9_13   T:None D:None C:None R:None L:None  B:20.0,104.472,nan| 
+N:LGAD_W3076_12_13_noDN_noSP_noRS T:None D:None C:None R:None L:0.490,97.399,0.982 B:-29.9,85.447,nan|-29.8,84.284,nan|-24.9,86.437,nan|-20.0,88.371,nan|-19.9,86.528,nan|-15.0,90.737,nan|-10.0,92.783,nan|-5.0,93.549,nan|-4.9,97.059,nan|0.0,96.704,nan|5.0,99.907,nan|10.0,102.060,nan|15.0,104.561,nan|20.0,105.726,nan|24.9,110.760,nan|25.0,113.217,nan|30.0,114.262,nan|30.1,115.449,nan|35.0,118.802,nan|40.0,125.039,nan| 
