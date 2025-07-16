@@ -1,0 +1,93 @@
+IV with two I-meter
+IV with two I-meter
+:Program Version
+13.8.2003 Moll, 4.2008 Fahrer, 6.2011 Gabrysch, 7.2019 Mateu
+:start
+18/06/2021 15:06:00
+:stop
+18/06/2021 15:06:28
+:elapsed[s]
+27.9
+:tester
+Gabriele
+:environment
+Probe Station (28-2-019)
+:comment
+Initial CVIV test on BNL-AC-LGAD-STRIP_GD
+:temperature[C]
+25.0
+:ToolID
+1102
+:GuardRingConnection
+1
+:Region
+0
+:Instruments
+I meter: Keithley 6487
+V source: Keithley 2410
+- integration time [ms]: 20.0
+- internal averaging: 2
+- compliance [A or V]: 1.000E-5
+:ramp up step [V], delay [s], down step [V], delay[s]
+20.0, 0.5, 20.0, 0.5
+:set voltage start [V], voltage stop [V], number of steps
+-0.0, -400.0, 50
+:measured voltage start [V], voltage stop [V], number of steps
+-0.0, -195.9, 25
+:step mode
+linear
+:Sample
+BNL-AC-LGAD-STRIP_GD
+:Producer
+
+:Run
+
+:Wafer
+
+:TREC
+
+:Area[cm-2]
+
+:Thickness[um]
+
+:Support_Wafer_Thickness[um]
+
+:Resistivity[ohm.cm]
+
+:Sample_comment
+
+:Material
+p FZ
+:Irradiation(Location,Fluence/Dose,Units,Particle,Date)
+,0.000000E+0,particles/cm2,  ,01/01/1904
+:Annealing_history(time[min],Temp[C],Date)
+0.0,0.0,01/01/1904
+:legend
+bias [V]	Total Current [A]	Pad Current [A]
+BEGIN
+-0.000000E+0	3.730835E-11	-7.109399E-13
+-8.163265E+0	-6.702143E-9	2.092182E-13
+-1.632653E+1	-1.246901E-8	-7.787042E-14
+-2.448980E+1	-1.738646E-8	-2.942256E-13
+-3.265306E+1	-2.155467E-8	9.388086E-13
+-4.081633E+1	-2.653107E-8	-5.979432E-13
+-4.897959E+1	-3.071580E-8	-3.473403E-13
+-5.714286E+1	-3.299057E-8	1.739484E-13
+-6.530612E+1	-3.995805E-8	-3.284732E-13
+-7.346939E+1	-4.308187E-8	3.822857E-13
+-8.163265E+1	-4.682457E-8	-1.681039E-13
+-8.979592E+1	-5.088112E-8	3.386087E-13
+-9.795918E+1	-5.466555E-8	-5.563128E-13
+-1.061224E+2	-5.859071E-8	-5.141559E-14
+-1.142857E+2	-6.276282E-8	3.102421E-14
+-1.224490E+2	-6.714257E-8	3.986901E-13
+-1.306122E+2	-7.328628E-8	-1.223719E-13
+-1.387755E+2	-7.839094E-8	-1.820490E-13
+-1.469388E+2	-8.330159E-8	6.957480E-14
+-1.551020E+2	-8.869539E-8	-7.602468E-14
+-1.632653E+2	-9.694288E-8	6.142043E-13
+-1.714286E+2	-1.090007E-7	-1.802032E-13
+-1.795918E+2	-1.215533E-7	-9.570311E-13
+-1.877551E+2	-8.000276E-6	1.060332E-11
+-1.959184E+2	-9.999556E-6	-2.688417E-11
+END
