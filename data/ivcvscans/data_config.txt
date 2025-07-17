@@ -1,4 +1,4 @@
-DR N:AC_W3096 T:~-20 # ignore unstable measurements when temp is low
+DR N:AC_W3096 T:~-20 # ignore unstable measurements whose temp is low
 DR N:AC_W3096 R:test_ # ignore tests
 DR N:DC_W3058 R:RoomTemp # ignore tests
 DR N:DC_W3045 R:RoomTemp # ignore tests

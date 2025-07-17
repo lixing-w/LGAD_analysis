@@ -152,7 +152,8 @@ def load_data_config(path: str, sensors: list[Sensor]):
                 set_params = dict()
                 if "DEP" in info:
                     set_params['DEP'] = float(info['DEP'])
-                
+                if "RT" in info:
+                    set_params['RT'] = int(info['RT'])
                 return set_params
             
             if line.startswith("DR"):
@@ -715,7 +716,7 @@ def analyze_sensor_iv(sensor: Sensor, curr_type: str='pad', plot=True):
                     plt.plot(xs[first_idx_after_dep_v:], pred_y, color='grey', alpha=0.1, linestyle='--', label='Linear Fits' if i == 1 else None)
                 # c. plot auxiliary points
                 for i in range(1, min(len(lines)-1, 51)): 
-                    plt.axvline(lines[i][2], color='grey', alpha=0.1, ls='-', label='Breakdown Point' if i == 1 else None)
+                    plt.axvline(lines[i][2], color='grey', alpha=0.1, ls='-', label='Breakdown Points' if i == 1 else None)
                 
                 # d. plot main fitted line and thresholding line, and main breakdown point
                 pred_y = primary_line[0] * xs[first_idx_after_dep_v:] + primary_line[1]
@@ -763,7 +764,7 @@ def analyze_sensor_iv(sensor: Sensor, curr_type: str='pad', plot=True):
                 plt.figure(figsize=(10, 6))
                 seen_label = set()
                 for temperature, date, data, humidity, ramp_type, bd_v, std in all_data_in_dir_ramp_up:
-                    label = rf"{temperature}$^\circ$C"
+                    label = rf"{temperature:.1f}$^\circ$C"
                     if label in seen_label:
                         plt.plot(data["voltage"], data[curr_type], marker='o', markersize=3, color=temperature_to_color(temperature))
                     else:
@@ -783,7 +784,7 @@ def analyze_sensor_iv(sensor: Sensor, curr_type: str='pad', plot=True):
                 plt.figure(figsize=(10, 6))
                 seen_label = set()
                 for temperature, date, data, humidity, ramp_type, bd_v, std in all_data_in_dir_ramp_down:
-                    label = rf"{temperature}$^\circ$C"
+                    label = rf"{temperature:.1f}$^\circ$C"
                     if label in seen_label:
                         plt.plot(data["voltage"], data[curr_type], marker='o', markersize=3, color=temperature_to_color(temperature))
                     else:
@@ -803,7 +804,7 @@ def analyze_sensor_iv(sensor: Sensor, curr_type: str='pad', plot=True):
                 plt.figure(figsize=(10, 6))
                 seen_label = set()
                 for temperature, date, data, humidity, ramp_type, bd_v, std in all_data_in_dir_not_given:
-                    label = rf"{temperature}$^\circ$C"
+                    label = rf"{temperature:.1f}$^\circ$C"
                     if label in seen_label:
                         plt.plot(data["voltage"], data[curr_type], marker='o', markersize=3, color=temperature_to_color(temperature))
                     else:
