@@ -19,8 +19,8 @@ linear_fit - Fits data with a linear line
 determine_spacing - Tells the avg interval of data
 """
 
-# DATABASE_DIR = "./data/ivcvscans"
-DATABASE_DIR = "./data/IVCV_UNIGE_STRANGE_FEATURES/W3045"
+DATABASE_DIR = "./data/ivcvscans"
+# DATABASE_DIR = "./data/IVCV_UNIGE_STRANGE_FEATURES/W3045"
 # DATABASE_DIR = "./data/IVCV_UNIGE_STRANGE_FEATURES/Batch_3076_destructiontests"
 # DATABASE_DIR = "./data/IVCV_UNIGE_STRANGE_FEATURES/ClimateTests_3045C"
 # DATABASE_DIR = "./data/IVCV_UNIGE_STRANGE_FEATURES/destruction_deionization"

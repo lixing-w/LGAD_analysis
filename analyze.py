@@ -35,8 +35,8 @@ def parse_args():
     parser.add_argument(
         '--overwrite', 
         action='store_true',
-        default=True,
-        help='''For new analysis results, whether append to sensor_config.txt or overwrite old.'''
+        default=False,
+        help='''For new analysis results, whether modify sensor_config.txt or overwrite old.'''
     )
     parser.add_argument(
         '--curr_type', 
@@ -158,6 +158,8 @@ def load_data_config(path: str, sensors: list[Sensor]):
             
             if line.startswith("DR"):
                 toks = line.removeprefix("DR ").split(' ')
+                # ignore multiple spaces
+                toks = [tok for tok in toks if len(tok)]
                 file_info = dict()
                 for tok in toks:
                     pair = tok.split(":")
@@ -169,6 +171,8 @@ def load_data_config(path: str, sensors: list[Sensor]):
                 
             elif line.startswith("SPEC"):
                 toks = line.removeprefix("SPEC ").split(' ')
+                # ignore multiple spaces
+                toks = [tok for tok in toks if len(tok)]
                 file_info = dict()
                 set_info = dict()
                 
@@ -205,7 +209,7 @@ def write_sensor_config(path: str, sensors: list[Sensor]):
         f.write("# N:name T:type D:avg_dep_v C:c_after_depletion,freq,temp|... R:bd_thresh L:slope,offset,avg_sigma B:temp,avg_volt,avg_humi|... \n")
         for sensor in tqdm(sensors, desc="Writing sensor config"):
             f.write(f"N:{sensor.name:<20} T:{"None" if sensor.type is None else sensor.type:<4} ")
-            
+
             f.write(f"D:{"None" if sensor.depletion_v is None else f'{sensor.depletion_v:.3f}'} ")
             if sensor.cv_scan_data is None or len(sensor.cv_scan_data) < 1:
                 f.write(f"C:None")
@@ -267,12 +271,11 @@ def load_sensor_config(path: str, sensors: list[Sensor], load_iv=True, load_cv=T
                 info[pair[0]] = pair[1]
             
             name, type, dep_v, cv_scan_data, bd_thresh, iv_scan_data, iv_scan_line = info["N"], info["T"], info["D"], info["C"], info["R"], info["B"], info["L"]
-            
             sensor = name_to_sensor[name]
             sensor.name = name # name is assumed to be not None
             sensor.type = type if type != "None" else None
-            sensor.dep_v = float(dep_v) if dep_v != "None" else None 
             sensor.bd_thresh = float(bd_thresh) if bd_thresh != "None" else None
+            sensor.depletion_v = float(dep_v) if dep_v != "None" else None 
             if iv_scan_data != "None" and load_iv:
                 bd_list = iv_scan_data.split('|')
                 bd_list = bd_list[:-1] # remove the trailing empty list since the str ends with '|' 
@@ -1174,7 +1177,7 @@ def main():
     sensors = list_sensors()
     load_sensor_config(DATABASE_DIR, sensors, load_iv=(not ARGS.iv or (ARGS.iv and not ARGS.overwrite)), load_cv=(not ARGS.cv or (ARGS.cv and not ARGS.overwrite)))
     load_data_config(DATABASE_DIR, sensors)
-        
+    
     if ARGS.sensor is None:
         interested_sensor_names = set([sensor.name for sensor in sensors])
     else:
