@@ -50,6 +50,8 @@ class AutoEncoder(nn.Module):
             nn.LeakyReLU(),
             nn.Conv1d(128, 128, 3, stride=2, padding=1),
             nn.LeakyReLU(),
+            nn.Conv1d(128, 256, 3, stride=2, padding=1),
+            nn.LeakyReLU(),
         )
         
         dummy_input = torch.zeros(1, 1, max_seq_len)  # batch_size=1
@@ -59,13 +61,18 @@ class AutoEncoder(nn.Module):
 
         self.encoder_fc = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(self.flattened_dim, self.latent_dim),
+            nn.Linear(self.flattened_dim, 128),
+            nn.LeakyReLU(),
+            nn.Linear(128, self.latent_dim),
         )
         
         self.decoder = nn.Sequential(
-            nn.Linear(self.latent_dim, self.flattened_dim),
+            nn.Linear(self.latent_dim, 128),
             nn.LeakyReLU(),
+            nn.Linear(128, self.flattened_dim),
             nn.Unflatten(1, (self.cnn_out.shape[1], self.cnn_out.shape[2])),
+            nn.ConvTranspose1d(256, 128, 3, stride=2, padding=1, output_padding=1),
+            nn.LeakyReLU(),
             nn.ConvTranspose1d(128, 128, 3, stride=2, padding=1, output_padding=1),
             nn.LeakyReLU(),
             nn.ConvTranspose1d(128, 16, 3, stride=2, padding=1, output_padding=1),
@@ -73,38 +80,32 @@ class AutoEncoder(nn.Module):
             nn.ConvTranspose1d(16, 1, 3, stride=1, padding=1, output_padding=1),
         )
         
-        # self.smooth_alpha = nn.Sequential( # dynamic denoising weight map
-        #     nn.Conv1d(1, 16, 3, padding=1),
-        #     nn.ReLU(),
-        #     nn.Conv1d(16, 3, 3, padding=1), 
-        #     nn.Softmax(dim=1) # (B, 3, seq_len)
-        # )
-        
-        # def gaussian_kernel1d(kernel_size, sigma):
-        #     center = kernel_size // 2
-        #     x = torch.arange(kernel_size) - center
-        #     kernel = torch.exp(-0.5 * (x / sigma) ** 2)
-        #     kernel /= kernel.sum()
-        #     return kernel
-
-        # kernel_5 = gaussian_kernel1d(5, 1)
-        # kernel_7 = gaussian_kernel1d(7, 1)
-        # self.smooth_cnn_5 = nn.Conv1d(1, 1, 5, padding=2, bias=False)
-        # self.smooth_cnn_7 = nn.Conv1d(1, 1, 7, padding=3, bias=False)
-        # with torch.no_grad():
-        #     self.smooth_cnn_5.weight.copy_(kernel_5.reshape(1, 1, -1))
-        #     self.smooth_cnn_7.weight.copy_(kernel_7.reshape(1, 1, -1))
+        self.regressor = nn.Sequential( # regressor to map latent to performance metrics
+            nn.Linear(self.latent_dim, 64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128, 6)
+        )
+        # predicted metrics are 
+        # [temp, date.toordinal(), humi, ramp_type, duration, sensor_number]
     
     def forward(self, x):
         features = self.encoder_cnn(x)
         latent_vec = self.encoder_fc(features)
         recons = self.decoder(latent_vec)
-        # smooth_coeff = self.smooth_alpha(recons) # (B, 3, seq_len)
-        # smoothed_recons = smooth_coeff[:,[0]] * recons + smooth_coeff[:,[1]] * self.smooth_cnn_5(recons) + smooth_coeff[:,[2]] * self.smooth_cnn_7(recons)
-        return recons
-        # return smoothed_recons, smooth_coeff[:,1:,:].mean(), torch.mean(torch.square(smoothed_recons - recons))
+        metrics = self.regressor(latent_vec)
+        return recons, metrics
+
+class Encoder(AutoEncoder):
     
-    def get_latent(self, x):
+    # just the encoder layers
+    def forward(self, x):
         features = self.encoder_cnn(x)
         latent_vec = self.encoder_fc(features)
         return latent_vec
+    

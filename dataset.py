@@ -163,7 +163,7 @@ class SingleIVDatasetForAutoEncoder(Dataset):
 class AggregateIVDatasetForAutoEncoder(Dataset):
     """ A database consisting of all IV scans from DATABASE_DIR """
     # contains ALL IV scans from DATABASE_DIR, regardless what sensor they belong to
-    def __init__(self, DATABASE_DIR: str, mode: str="train"):
+    def __init__(self, DATABASE_DIR: str, mode: str="compact"):
         """
         Initializes a database consisting of all IV scans from DATABASE_DIR.
         
@@ -171,14 +171,14 @@ class AggregateIVDatasetForAutoEncoder(Dataset):
         ----------
         DATABASE_DIR : str 
             Relative path to your database.
-        mode : str, optional, {"train", "eval"}
-            If set to "train", indexing into the database would return 
-            iv_seq and seq_len. If set to "eval", it would return 
+        mode : str, optional, {"compact", "full"}
+            If set to "compact", indexing into the database would return 
+            iv_seq and seq_len. If set to "full", it would return 
             all other meta-information in addition to iv_seq and seq_len.
-            Defaults to "train"
+            Defaults to "compact"
         """
         super().__init__()
-        assert mode in {"train", "eval"}
+        assert mode in {"compact", "full"}
         self.mode = mode 
         self.sensors = list_sensors()
         load_sensor_config(DATABASE_DIR, self.sensors)
@@ -210,8 +210,12 @@ class AggregateIVDatasetForAutoEncoder(Dataset):
         # now, calculate longest sequence length for padding and cache data
         self.max_seq_len = 0
         self.data = []
+        all_date_ordinal = []
         for full_scan_path in self.all_iv_scans:
             temperature, date, data, humi, ramp_type, duration = parse_file_iv(full_scan_path)
+            
+            # we normalize date by calculating z-score
+            all_date_ordinal.append(date.toordinal())
             
             xs = data["voltage"]
             ys = data["pad"]
@@ -235,23 +239,37 @@ class AggregateIVDatasetForAutoEncoder(Dataset):
             self.max_seq_len = max(self.max_seq_len, seq_len)
             self.data.append([temperature, date, data, humi, ramp_type, duration, seq_len])
         
+        # calculate z-scores for date
+        all_date_ordinal = np.array(all_date_ordinal)
+        self.date_mean = np.mean(all_date_ordinal)
+        self.date_std = np.std(all_date_ordinal)
+        normalized_date_ordinal = (all_date_ordinal - self.date_mean)/self.date_std
+        
         # perform padding for all data seq 
         for i in range(len(self.data)):
+            self.data[i][1] = normalized_date_ordinal[i] # replace w/ z-score
             seq_len = self.data[i][6]
             self.data[i][2] = np.pad(self.data[i][2], [(0,0),(0,self.max_seq_len - seq_len)], constant_values=0)
             assert self.data[i][2].shape[1] == self.max_seq_len
         
         print(f"IV sequence padded to max sequence length {self.max_seq_len}.") 
-        
+    
+    def z_score_to_date_ordinal(self, z):
+        return z * self.date_std + self.date_mean
+    
     def __len__(self):
         return len(self.all_iv_scans)
 
     def __getitem__(self, index):
         temperature, date, data, humi, ramp_type, duration, seq_len = self.data[index]
         iv_seq = torch.from_numpy(data).float()
-        if self.mode == "train":
+        if self.mode == "compact":
             return iv_seq, seq_len
-        elif self.mode == "eval":
+        elif self.mode == "full":
             sensor_number = self.all_iv_scans_from_sensor[index]
             sensor_name = self.sensor_number_to_name[sensor_number]
-            return temperature, date.toordinal(), iv_seq, humi, ramp_type, duration, seq_len, sensor_number, sensor_name
+            if humi is None: humi = float('inf')
+            if duration is None: duration = float('inf')
+            if ramp_type == 0: ramp_type = float('inf')
+            if temperature is None: temperature = float('inf')
+            return temperature, date, iv_seq, humi, ramp_type, duration, seq_len, sensor_number, sensor_name

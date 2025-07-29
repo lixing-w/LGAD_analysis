@@ -23,14 +23,14 @@ Workflow and Purpose:
 
     However, as of now, the autoencoders have a simple architecture, and 
     explanability of the network may not be promising. Plus, we don't have 
-    too many IV scans to learn (e.g. only around 402 good scans in ./ivcvscans); 
+    too many IV scans to learn (e.g. only around 402 good scans in ./data/ivcvscans); 
     we lack information on humidity and measurement duration of many scans; 
     we lack information about the architecture and parameters (such as doping 
     concentration) of the LGADs themselves. Some changes were made to some same 
     LGAD between scans, and we have no good way of quantifying these changes 
-    other than knowing the scans took place on different date.
-    The data is not ideal for ML to work its way out. Still, we might be able 
-    to explore some correlations between environment variables and IV behaviors.
+    other than knowing the scans took place on different dates.
+    The data is not ideal, still, we will see what correlations we can
+    explore between environment variables and IV behaviors.
 
     The autoencoders have latent dimension of 16 for now. After experimentation, 
     we found that any number lower than this caused the model to reconstruct 
@@ -47,6 +47,7 @@ Structure of the project:
     preprocess.py - lib containing functions to prepare the data for ML
     model.py      - defines pytorch models
     train_autoencoder.py - trains autoencoder to compress IV curve
+    visualize_latent.py  - visualize the latent space w/ environmental variables
 
     Folders:
     archive_code  - some old code created before Summer 2025, not needed for now
@@ -55,8 +56,12 @@ Structure of the project:
     miscellaneous - miscellaneous files and data
 
 Running the project:
-    1)  Always specify the root directory to target database in utils.py, by setting
+    1)  Specify the root directory to target database in utils.py, by setting
         DATABASE_DIR. This constant is share across many scripts of the system. 
+        If you want to perform any operation on data in a new database, always 
+        remeber to change DATABASE_DIR before running the code. Not doing so 
+        might lead to undefined behavior.
+
         All databases should be in folder ./data at the project 
         root. Each database should contain sensor folders, each of which 
         contains scans or folders of scans. All sensor folders are assumed to be 
@@ -79,14 +84,18 @@ Running the project:
 
     2)  To start with, one can run the following command:
             python3 analyze.py --iv 
-        which analyzes all available IV scans in the database, estimating 
-        breakdown voltages and depletion voltages, and plotting related 
-        figures. For more options, type the following command:
+        which uses a modified version of RANSAC and other non-ML methods 
+        to analyze all available IV scans in the database, estimating 
+        breakdown voltages and depletion voltages, and plotting related figures. 
+        Type the following command for help:
             python3 analyze.py --help
 
-    3)  View plots in your sensor folders.
+    3)  View plots generated in your sensor folders.
     4)  Further configure your analysis with data_config.txt and sensor_config.txt
         at your database root.
+    
+    5) Check, train, and modify autoencoders in model.py and train_autoencoder.py
+    6) Visualize latent space of the database by running visualize_latent.py
 
 Config Systems:
     At the root of each database, there are two files, data_config.txt 
@@ -169,8 +178,7 @@ Dev logs:
     Jun 19 (Lixing):
         - added compatibility of .iv files 
         - added Sensor class
-        - added documentation 
-        - bug fixes
+        - added documentation and bug fixes
     
     Jun 30 (Lixing):
         - added more data 
@@ -202,9 +210,7 @@ Dev logs:
         - rebuilt entirely IV analysis code written by Trevor, achieving 
           all original functionalities, removing all hard-coded stuff, 
           greatly improving readability
-        - finished config system for sensor. To view info or configure 
-          sensors, go to sensor_config.txt at root of your database. Each 
-          database has one sensor_config.txt of its own.
+        - finished config system for sensor. 
         - started design of a secondary config system for scan files that 
           help specify special ways to process certain data, as a replacement 
           to the originally hard-coded method

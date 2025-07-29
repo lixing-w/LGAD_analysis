@@ -579,7 +579,7 @@ def parse_file_iv(filepath: str, returns_data: bool=True):
         with open(filepath, 'r') as f:
             lines = f.readlines()
         # Extract metadata
-        if lines[0].split(' ')[1] == 'inf':
+        if 'Inf' in lines[0].split(' ')[1]:
             temperature = None
         else:
             temperature = float(lines[0].split(' ')[1])
@@ -613,7 +613,7 @@ def parse_file_iv(filepath: str, returns_data: bool=True):
         # extract metadata 
         for i in range(len(lines)):
             if ":temperature[C]" in lines[i]:
-                if lines[i+1] == 'inf':
+                if 'Inf' in lines[i+1]:
                     temperature = None 
                 else:
                     temperature = float(lines[i+1])
@@ -640,7 +640,7 @@ def parse_file_iv(filepath: str, returns_data: bool=True):
     
     else:
         raise ValueError(f"File must be .txt or .iv, given {filepath}")
-    
+    assert temperature != float('inf')
     return temperature, date, data, humidity, ramp_type, duration
 
 def parse_file_iv_basic_info(filepath: str):
@@ -665,7 +665,7 @@ def parse_file_cv(filepath: str, returns_data: bool=True):
         # extract metadata 
         for i in range(len(lines)):
             if ":temperature[C]" in lines[i]:
-                if lines[i+1] == 'inf':
+                if 'Inf' in lines[i+1]:
                     temperature = None 
                 else:
                     temperature = float(lines[i+1])
