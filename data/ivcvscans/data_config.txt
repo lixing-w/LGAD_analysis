@@ -5,15 +5,24 @@ DR N:DC_W3045 R:RoomTemp # ignore tests
 DR N:DC_W3058 T:~-40 RT:-1 D:27/10/2023
 DR N:DC_W3058 T:-60 D:27/10/2023
 DR N:DC_W3058 T:-40 RT:-1 D:26/10/2023
+DR N:DC_W3058 T:-20 RT:-1 D:27/10/2023 # something went wrong in low volts
 DR N:DC_W3058 T:-60 D:26/10/2023
 DR N:DC_W3058 T:~-40 RT:-1 D:25/10/2023
 DR N:DC_W3058 T:~-40 D:30/10/2023
-SPEC N:DC_W3058 D:27/10/2023 T:-20 RT:-1 SET DEP:66 # something went wrong with low volts
-SPEC N:DC_W3058 D:30/10/2023 T:-20 RT:-1 SET DEP:70 # something went wrong with low volts
+DR N:BNL_ACLGAD_STRIP25 D:06/07/2021 R:_1.cv
+DR N:HPK_LGAD_3.1_1 D:22/06/2021 R:.iv # problematic scan?
+DR N:HPK_LGAD_3_1_4 D:22/06/2021 R:_1.cv # inconsistent measurement, showing dep around 20V but other scans all show around 45V
+DR N:HPK_LGAD_3_1_3 D:22/06/2021 R:_1.cv # inconsistent measurement, showing dep around 20V but other scans all show around 45V
+DR N:HPK_LGAD_3_1_5 D:22/06/2021 R:_1.cv # inconsistent measurement, showing dep around 20V but other scans all show around 45V
+DR N:HPK_LGAD_3_1_6 D:22/06/2021 R:_1.cv # inconsistent measurement, showing dep around 20V but other scans all show around 45V
+DR N:BNL-AC-LGAD-STRIP_GD D:18/06/2021 R:_1.iv # broken data
+DR N:D5 D:21/06/2021 R:.iv
+SPEC N:BNL_LGAD_W3076_12_13 T:-20 D:14/08/2024 R:_7.iv SET DEP:22
+DR N:DC_W3058 D:30/10/2023 T:-20 RT:-1
 SPEC N:DC_W3045 D:26/09/2023 T:~-0 RT:-1 SET DEP:40 # for ramp downs scans, something went wrong with low volts
 SPEC N:DC_W3045 D:28/09/2023 RT:-1 SET DEP:50 # for ramp downs scans, something went wrong with low volts
-SPEC N:DC_W3045 SET DEP:25 
-SPEC N:HPK_LGAD_3_1_6 D:16/07/2021 SET DEP:110 # cv scan shows dep_v around 40V, but something's wrong w/ that scan
-SPEC N:HPK_LGAD_3_1_5 D:16/07/2021 SET DEP:110 # cv scan shows dep_v around 40V, but something's wrong w/ that scan
-SPEC N:HPK_LGAD_3_1_4 D:16/07/2021 SET DEP:120 # cv scan shows dep_v around 40V, but something's wrong w/ that scan
-SPEC N:HPK_LGAD_3_1_3 D:16/07/2021 SET DEP:100 # cv scan shows dep_v around 40V, but something's wrong w/ that scan
+SPEC N:DC_W3045 SET DEP:40 
+SPEC N:HPK_LGAD_3_1_6 D:16/07/2021 R:.iv SET DEP:110 # cv scan shows dep_v around 40V, but something's wrong w/ that iv scan
+SPEC N:HPK_LGAD_3_1_5 D:16/07/2021 R:.iv SET DEP:110 # cv scan shows dep_v around 40V, but something's wrong w/ that iv scan
+SPEC N:HPK_LGAD_3_1_4 D:16/07/2021 R:.iv SET DEP:120 # cv scan shows dep_v around 40V, but something's wrong w/ that iv scan
+SPEC N:HPK_LGAD_3_1_3 D:16/07/2021 R:.iv SET DEP:100 # cv scan shows dep_v around 40V, but something's wrong w/ that iv scan
