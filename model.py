@@ -41,7 +41,7 @@ class AutoEncoder(nn.Module):
     def __init__(self, max_seq_len):
         super().__init__()
         
-        self.latent_dim = 16
+        self.latent_dim = 18
         
         self.encoder_cnn = nn.Sequential(
             nn.Conv1d(1, 16, 3, stride=1, padding=1),
@@ -51,6 +51,8 @@ class AutoEncoder(nn.Module):
             nn.Conv1d(128, 128, 3, stride=2, padding=1),
             nn.LeakyReLU(),
             nn.Conv1d(128, 256, 3, stride=2, padding=1),
+            nn.LeakyReLU(),
+            nn.Conv1d(256, 256, 3, stride=2, padding=1),
             nn.LeakyReLU(),
         )
         
@@ -63,29 +65,33 @@ class AutoEncoder(nn.Module):
             nn.Flatten(),
             nn.Linear(self.flattened_dim, 128),
             nn.LeakyReLU(),
-            nn.Linear(128, self.latent_dim),
+            nn.Linear(128, 128),
+            nn.LeakyReLU(),
+            nn.Linear(128, self.latent_dim)
         )
         
         self.decoder = nn.Sequential(
             nn.Linear(self.latent_dim, 128),
             nn.LeakyReLU(),
+            nn.Linear(128, 128),
+            nn.LeakyReLU(),
             nn.Linear(128, self.flattened_dim),
             nn.Unflatten(1, (self.cnn_out.shape[1], self.cnn_out.shape[2])),
+            nn.ConvTranspose1d(256, 256, 3, stride=2, padding=1, output_padding=1),
+            nn.LeakyReLU(),
             nn.ConvTranspose1d(256, 128, 3, stride=2, padding=1, output_padding=1),
             nn.LeakyReLU(),
             nn.ConvTranspose1d(128, 128, 3, stride=2, padding=1, output_padding=1),
             nn.LeakyReLU(),
             nn.ConvTranspose1d(128, 16, 3, stride=2, padding=1, output_padding=1),
             nn.LeakyReLU(),
-            nn.ConvTranspose1d(16, 1, 3, stride=1, padding=1, output_padding=1),
+            nn.ConvTranspose1d(16, 1, 3, stride=1, padding=1, output_padding=0),
         )
         
         self.regressor = nn.Sequential( # regressor to map latent to performance metrics
             nn.Linear(self.latent_dim, 64),
             nn.ReLU(),
             nn.Linear(64, 128),
-            nn.ReLU(),
-            nn.Linear(128, 128),
             nn.ReLU(),
             nn.Linear(128, 128),
             nn.ReLU(),

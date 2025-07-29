@@ -420,9 +420,9 @@ def write_sensor_config(path: str, sensors: list[Sensor]):
         f.write("# This is config file for sensors.\n")
         f.write("# N:name T:type D:avg_dep_v C:c_after_depletion,freq,temp|... R:bd_thresh L:slope,offset,avg_sigma B:temp,avg_volt,avg_humi|... \n")
         for sensor in tqdm(sensors, desc="Writing sensor config"):
-            f.write(f"N:{sensor.name:<20} T:{"None" if sensor.type is None else sensor.type:<4} ")
+            f.write(f"N:{sensor.name:<20} T:{'None' if sensor.type is None else sensor.type:<4} ")
 
-            f.write(f"D:{"None" if sensor.depletion_v is None else f'{sensor.depletion_v:.3f}'} ")
+            f.write(f"D:{'None' if sensor.depletion_v is None else f'{sensor.depletion_v:.3f}'} ")
             if sensor.cv_scan_data is None or len(sensor.cv_scan_data) < 1:
                 f.write(f"C:None")
             else:

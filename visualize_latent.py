@@ -25,9 +25,9 @@ def plot_latent(model_path: str):
         device = torch.device("mps")
     else:
         device = torch.device("cpu")
-    
+
     print(f"Using device: {device}")
-    
+        
     dataset = AggregateIVDatasetForAutoEncoder(DATABASE_DIR, mode="full")
     
     model = Encoder(dataset.max_seq_len).to(device)
@@ -62,11 +62,11 @@ def plot_latent(model_path: str):
     value_lsts = [np.array(lst) for lst in value_lsts]
 
     dim_1 = 0
-    dim_2 = 1
+    dim_2 = 6
     for param, value_lst in zip(params, value_lsts):
         plt.figure(figsize=(12,10))
         if param == "Ramp Type":
-            ramp_map = {-1: "Down", 0: "NA", 1: "Up"}
+            ramp_map = {-1: "Down", float('inf'): "NA", 1: "Up"}
             for ramp_type in np.unique(value_lst):
                 mask = (value_lst == ramp_type)
                 plt.scatter(all_latent[mask][:,dim_1], all_latent[mask][:,dim_2], label=ramp_map[ramp_type])
@@ -74,7 +74,7 @@ def plot_latent(model_path: str):
 
         elif param == "Date":
             # convert ordinal to date string
-            labels = [datetime.fromordinal(int(d)).strftime("%Y-%m-%d") for d in value_lst]
+            labels = [datetime.fromordinal(int(dataset.z_score_to_date_ordinal(d))).strftime("%Y-%m-%d") for d in value_lst]
             uniq_dates = sorted(set(labels))
             # re-index dates
             label_to_int = {l: i for i, l in enumerate(uniq_dates)} 
@@ -108,9 +108,9 @@ def explain_latent(model_path: str, dim: int, num_samples: int=100, ):
         device = torch.device("mps")
     else:
         device = torch.device("cpu")
-    
+
     print(f"Using device: {device}")
-    
+
     dataset = AggregateIVDatasetForAutoEncoder(DATABASE_DIR, mode="compact")
 
     model = Encoder(dataset.max_seq_len).to(device)
@@ -143,8 +143,8 @@ def explain_latent(model_path: str, dim: int, num_samples: int=100, ):
     plt.ylabel("log(Pad Current (A))")
     plt.colorbar(label=f"SHAP Values on Dim {dim}")
     plt.tight_layout()
-    plt.savefig(f"dim{dim}.png")
-    # plt.show()
+    # plt.savefig(f"dim{dim}.png")
+    plt.show()
     plt.close()
     
     # sample = 0
@@ -156,7 +156,7 @@ def explain_latent(model_path: str, dim: int, num_samples: int=100, ):
 
 
 if __name__ == '__main__':
-    model_path = "autoencoder_model/ivcvscans-2025-07-28-20:20:03/e275_l0.010.pth"
-    # plot_latent(model_path)
-    for i in range(16):
-        explain_latent(model_path, dim=i)
+    model_path = "autoencoder_model/ivcvscans-2025-07-29-22:58:43/e211_l23.311.pth"
+    plot_latent(model_path)
+    # for i in range(16):
+    #     explain_latent(model_path, dim=i, num_samples=10)

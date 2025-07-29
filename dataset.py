@@ -68,7 +68,7 @@ class IVDataset(Dataset):
             plt.plot(xs, ys_log10, label=rf"Scan at {temperature}$^\circ$C", marker='o', markersize=3)
             plt.xlabel("Reverse-bias Voltage (V)")
             plt.ylabel(f"log(Pad Current (A))")
-            plt.title(rf"IV Scan at {temperature}$^\circ$C: Unable to Find Breakdown V; Range too Small ({self.sensor.name} {date.strftime("%b %d, %Y")})")
+            plt.title(rf"IV Scan at {temperature}$^\circ$C: Unable to Find Breakdown V; Range too Small ({self.sensor.name} {date.strftime('%b %d, %Y')})")
             plt.grid(True, which='major', linestyle='--', linewidth=0.6, alpha=0.7)
             plt.tight_layout()
             plt.show()

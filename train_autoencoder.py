@@ -54,7 +54,7 @@ def criterion(output, target, seq_len, pred_metrics, target_metrics):
     dura_loss = 0 if target_metrics[:,4] == float('inf') else torch.square(pred_metrics[:,4] - target_metrics[:,4])
     
     metrics_loss = temp_loss+date_sensor_num_loss+humi_loss+ramp_type_loss+dura_loss
-    return curve_loss + metrics_loss * 0.5
+    return curve_loss + metrics_loss * 0.2
 
 def aggregate_train():
     """ 
@@ -67,13 +67,13 @@ def aggregate_train():
     And models.py and train_autoencoder.py (this file) are backed up there as well.
     """
     start_time = datetime.now()
-    train_dir = f"./autoencoder_model/{DATABASE_DIR.split(os.sep)[-1]}-{start_time.strftime("%Y-%m-%d-%H:%M:%S")}"
+    train_dir = f"./autoencoder_model/{DATABASE_DIR.split(os.sep)[-1]}-{start_time.strftime('%Y-%m-%d-%H:%M:%S')}"
     os.makedirs(train_dir)
     
     # back-up the model.py
-    shutil.copy("./model.py", f"{train_dir}/model-{start_time.strftime("%Y-%m-%d-%H:%M:%S")}.py")
+    shutil.copy("./model.py", f"{train_dir}/model-{start_time.strftime('%Y-%m-%d-%H:%M:%S')}.py")
     # back-up the train_autoencoder.py
-    shutil.copy("./train_autoencoder.py", f"{train_dir}/train_autoencoder-{start_time.strftime("%Y-%m-%d-%H:%M:%S")}.py")
+    shutil.copy("./train_autoencoder.py", f"{train_dir}/train_autoencoder-{start_time.strftime('%Y-%m-%d-%H:%M:%S')}.py")
     config = {
         'lr': 0.0005,        # Learning rate
         'batch_size': 1,    # Single video per batch
@@ -201,4 +201,4 @@ if __name__ == '__main__':
     # train("DC_W3058")
     # run("autoencoder_model/ivcvscans-DC_W3058-2025-07-28-00:10:19/e292_l0.018.pth")
     aggregate_train()
-    # aggregate_run("autoencoder_model/ivcvscans-2025-07-28-20:20:03/e275_l0.010.pth")
+    # aggregate_run("autoencoder_model/ivcvscans-2025-07-29-23:27:22/e162_l24.699.pth")
