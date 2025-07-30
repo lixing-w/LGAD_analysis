@@ -1,0 +1,84 @@
+IV with two I-meter
+IV with two I-meter
+:Program Version
+13.8.2003 Moll, 4.2008 Fahrer, 6.2011 Gabrysch, 7.2019 Mateu
+:start
+14/08/2024 15:46:58
+:stop
+14/08/2024 15:47:32
+:elapsed[s]
+34.5
+:tester
+Trevor
+:environment
+Probe Station (28-2-019)
+:comment
+
+:temperature[C]
+-20.0
+:ToolID
+1102
+:GuardRingConnection
+1
+:Region
+0
+:Instruments
+I meter: Keithley 6487
+V source: Keithley 2410
+- integration time [ms]: 20.0
+- internal averaging: 3
+- compliance [A or V]: 6.000E-6
+:ramp up step [V], delay [s], down step [V], delay[s]
+20.0, 0.5, 20.0, 0.5
+:set voltage start [V], voltage stop [V], number of steps
+-0.0, -300.0, 50
+:measured voltage start [V], voltage stop [V], number of steps
+-0.0, -104.1, 18
+:step mode
+linear
+:Sample
+BNL_LGAD_W3076_9_13
+:Producer
+BNL
+:Run
+2003
+:Wafer
+2003
+:TREC
+
+:Area[cm-2]
+0.01
+:Thickness[um]
+50
+:Support_Wafer_Thickness[um]
+500
+:Resistivity[ohm.cm]
+100
+:Sample_comment
+
+:Material
+p EPI
+:Irradiation(Location,Fluence/Dose,Units,Particle,Date)
+:Annealing_history(time[min],Temp[C],Date)
+:legend
+bias [V]	Total Current [A]	Pad Current [A]
+BEGIN
+-0.000000E+0	3.350637E-9	-1.496515E-13
+-6.122449E+0	-3.352538E-8	-1.306106E-12
+-1.224490E+1	-6.994639E-8	-1.215869E-12
+-1.836735E+1	-1.062252E-7	-2.420312E-12
+-2.448980E+1	-1.423945E-7	-3.784309E-12
+-3.061224E+1	-1.795206E-7	-4.609145E-12
+-3.673469E+1	-2.162713E-7	-5.361795E-12
+-4.285714E+1	-2.532630E-7	-6.572185E-12
+-4.897959E+1	-2.900413E-7	-7.631634E-12
+-5.510204E+1	-3.264299E-7	-8.115010E-12
+-6.122449E+1	-3.636757E-7	-1.076815E-11
+-6.734694E+1	-4.005292E-7	-1.263111E-11
+-7.346939E+1	-4.370808E-7	-1.785310E-11
+-7.959184E+1	-4.737802E-7	-2.548561E-11
+-8.571429E+1	-5.108172E-7	-4.742253E-11
+-9.183673E+1	-5.477368E-7	-1.971036E-10
+-9.795918E+1	-7.338048E-7	-5.422464E-6
+-1.040816E+2	-5.999965E-6	-5.424771E-6
+END
