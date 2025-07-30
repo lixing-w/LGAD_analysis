@@ -285,7 +285,9 @@ class AggregateLatentDataset(AggregateIVDatasetForAutoEncoder):
         Parameters
         ----------
         DATABASE_DIR : str 
-            Relative path to your database.
+            The relative path to your database.
+        model_path : str
+            The relative path to the autoencoder that generates latents.
         """
         super().__init__(DATABASE_DIR, mode="full")
         

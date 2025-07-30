@@ -7,20 +7,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 """
-A code lib for miscellaneous constants and functions:
-
-DATABASE_DIR - directory for data base
-
-is_close - Checks if two floats' abs values are close 
-temperature_to_color - Maps temperature to a color
-humidity_to_color - Maps humidity to a color 
-parse_file_iv - Parses .txt, or .iv files, returns basic info and data
-parse_file_iv_basic_info - Parses .txt, or .iv files, returns basic info
-parse_file_cv - Parses .cv files, returns basic info and data 
-parse_file_cv_basic_info - Parses .cv files, returns basic info
-linear - A linear function
-linear_fit - Fits data with a linear line
-determine_spacing - Tells the avg interval of data
+A code lib for miscellaneous constants and functions
 """
 
 # Specify database directory. Note: must not end in '/' or '\'

@@ -147,7 +147,8 @@ def aggregate_run(model_path: str):
     Notes
     -----
     This function displays several figures comparing the original scans 
-    and the reconstructed scans (model outputs).
+    and the reconstructed scans (model outputs). You can change the number 
+    of samples displayed by changing number_of_examples in the body.
     """
     if torch.cuda.is_available():
         device = torch.device("cuda")

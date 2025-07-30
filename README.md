@@ -1,6 +1,11 @@
+# stresstests
 This project analyzes IV and CV scans of LGADs.
 
-Workflow and Purpose:
+
+# Legacy Version
+An older version of the IV analysis code is located here: https://github.com/tajrussell/LGAD_analysis
+
+# Workflow and Purpose
     We want to study how environmental conditions might affect performance 
     metrics of LGAD sensors. We primarily focus on IV scans, which tell 
     us the breakdown voltage, depletion voltage, and importantly how the 
@@ -95,7 +100,7 @@ Workflow and Purpose:
     could focus on enhancing network architecture, training methods, and 
     augmenting the data.
 
-Structure of the project:
+# Structure of the project
     Scripts:
     analyze.py    - script for analysis and plotting with non-ML methods
     utils.py      - lib containing constants, useful functions, and Sensor class
@@ -116,7 +121,7 @@ Structure of the project:
     data          - contains all databases
     miscellaneous - miscellaneous files and data
 
-Running non-ML analysis:
+# Running non-ML analysis
     1)  Specify the root directory to target database in utils.py, by setting
         DATABASE_DIR. This constant is share across many scripts of the system. 
         If you want to perform any operation on data in a new database, always 
@@ -155,7 +160,7 @@ Running non-ML analysis:
     4)  Further configure your analysis with data_config.txt and sensor_config.txt
         at your database root.
 
-Database Management:
+# Database Management
     Database management works for mainly non-ML analysis, but some features 
     supported for ML analysis as well. At the root of each database, there 
     are two files, data_config.txt and sensor_config.txt, which you can modify 
@@ -224,7 +229,7 @@ Database Management:
             => ramp type needs not to be specified if it is given in and 
             automatically parsed from the scan file.
 
-TODO:
+# TODO
     analyze.py:
         1. Implement analyze_file_cv(), a function that analyzes 
            CV scans specified by paths, supporting --file used with --cv.
@@ -236,7 +241,7 @@ TODO:
            higher estimated breakdown and vice versa, we decided to use 0.3 unanumously 
            for all sensors for now. But we might need its functionality in the future.
 
-Dev logs:
+# Dev logs
     Jun 19 (Lixing):
         - added compatibility of .iv files 
         - added Sensor class
