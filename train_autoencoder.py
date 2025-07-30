@@ -54,7 +54,7 @@ def criterion(output, target, seq_len, pred_metrics, target_metrics):
     dura_loss = 0 if target_metrics[:,4] == float('inf') else torch.square(pred_metrics[:,4] - target_metrics[:,4])
     
     metrics_loss = temp_loss+date_sensor_num_loss+humi_loss+ramp_type_loss+dura_loss
-    return curve_loss + metrics_loss * 0.2
+    return curve_loss + metrics_loss * 0.3
 
 def aggregate_train():
     """ 
@@ -101,7 +101,7 @@ def aggregate_train():
     
     
     optimizer = optim.Adam(model.parameters(), lr=config['lr'])
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=8, min_lr=1e-8)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=5, min_lr=1e-8)
     
     model.train() # set to training mode
     
@@ -201,4 +201,4 @@ if __name__ == '__main__':
     # train("DC_W3058")
     # run("autoencoder_model/ivcvscans-DC_W3058-2025-07-28-00:10:19/e292_l0.018.pth")
     aggregate_train()
-    # aggregate_run("autoencoder_model/ivcvscans-2025-07-29-23:27:22/e162_l24.699.pth")
+    # aggregate_run("autoencoder_model/ivcvscans-2025-07-29-23:40:59/e108_l18.894.pth")

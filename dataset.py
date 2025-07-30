@@ -6,6 +6,7 @@ from torch.utils.data import Dataset
 import numpy as np 
 import matplotlib.pyplot as plt
 
+from model import Encoder
 from utils import (
     Sensor, list_sensors, load_data_config, load_sensor_config, parse_file_iv
 )
@@ -273,3 +274,54 @@ class AggregateIVDatasetForAutoEncoder(Dataset):
             if ramp_type == 0: ramp_type = float('inf')
             if temperature is None: temperature = float('inf')
             return temperature, date, iv_seq, humi, ramp_type, duration, seq_len, sensor_number, sensor_name
+        
+class AggregateLatentDataset(AggregateIVDatasetForAutoEncoder):
+    """ A database consisting of all IV scans from DATABASE_DIR """
+    # contains ALL IV scans from DATABASE_DIR, regardless what sensor they belong to
+    def __init__(self, DATABASE_DIR: str, model_path: str):
+        """
+        Initializes a database consisting of all IV scans from DATABASE_DIR.
+        
+        Parameters
+        ----------
+        DATABASE_DIR : str 
+            Relative path to your database.
+        """
+        super().__init__(DATABASE_DIR, mode="full")
+        
+        # initialize autoencoder 
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            device = torch.device("mps")
+        else:
+            device = torch.device("cpu")
+        
+        print(f"Using device: {device}")
+        model = Encoder(self.max_seq_len).to(device)
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        model.eval()
+        
+        for d in self.data: # compute latent, then append to d 
+            iv_seq = torch.from_numpy(d[2]).float()
+            i_seq = iv_seq[[1],:].unsqueeze(0).to(device) # add batch dim
+            latent = model(i_seq)
+            d.append(latent.cpu().detach())
+            
+    def z_score_to_date_ordinal(self, z):
+        return z * self.date_std + self.date_mean
+    
+    def __len__(self):
+        return len(self.all_iv_scans)
+
+    def __getitem__(self, index):
+        temperature, date, data, humi, ramp_type, duration, seq_len, latent = self.data[index]
+        iv_seq = torch.from_numpy(data).float()
+        sensor_number = self.all_iv_scans_from_sensor[index]
+        sensor_name = self.sensor_number_to_name[sensor_number]
+        if humi is None: humi = 0
+        if duration is None: duration = 0
+        if ramp_type == 0: ramp_type = 0
+        if temperature is None: temperature = 25
+        return temperature, date, iv_seq, humi, ramp_type, duration, seq_len, sensor_number, sensor_name, latent
+        

@@ -1,19 +1,6 @@
 import torch
 import torch.nn as nn 
 
-class RNNModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        
-        self.gru = nn.GRU(input_size=3, hidden_size=128, num_layers=2)
-        self.fc = nn.Linear(128, 1)
-    
-    def forward(self, x):
-        # x = self.dropout_input(x) # shape: (N, 2), 2 for V, and Temperature
-        out, _ = self.gru(x) # shape: (N, 8)
-        out = self.fc(out) # shape: (N, 1), 1 for I
-        return out
-
 class MLPModel(nn.Module):
     def __init__(self):
         super().__init__()
@@ -93,9 +80,13 @@ class AutoEncoder(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 128),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(128, 256),
             nn.ReLU(),
-            nn.Linear(128, 6)
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, 6)
         )
         # predicted metrics are 
         # [temp, date.toordinal(), humi, ramp_type, duration, sensor_number]
@@ -109,9 +100,44 @@ class AutoEncoder(nn.Module):
 
 class Encoder(AutoEncoder):
     
+    def __init__(self, max_seq_len):
+        super().__init__(max_seq_len)
+        
     # just the encoder layers
     def forward(self, x):
         features = self.encoder_cnn(x)
         latent_vec = self.encoder_fc(features)
         return latent_vec
+
+class Decoder(AutoEncoder):
     
+    def __init__(self, max_seq_len):
+        super().__init__(max_seq_len)
+        
+    # just the decoder layers
+    def forward(self, x):
+        recons = self.decoder(x)
+        return recons 
+    
+class EnvToLatent(nn.Module):
+    # an MLP that maps environmental conditions to latents
+    def __init__(self):
+        super().__init__()
+        self.latent_dim = 18  # must match with AutoEncoder
+        self.num_params = 6
+        
+        self.mlp = nn.Sequential(
+            nn.Linear(self.num_params, 128),
+            nn.ReLU(),
+            nn.Linear(128, 256),
+            nn.ReLU(),
+            nn.Linear(256, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, self.latent_dim),
+        )
+        
+    def forward(self, x):
+        p_latent = self.mlp(x)
+        return p_latent

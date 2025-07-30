@@ -1,12 +1,14 @@
 from datetime import datetime
 import random 
 
+import seaborn as sns
 import numpy as np
 import shap
 import torch
 from torch.utils.data import DataLoader 
 import matplotlib.pylab as plt
 import matplotlib as mpl
+from scipy.stats import spearmanr
 from matplotlib.colors import TwoSlopeNorm
 
 # we have more than 20 sensors! need to expand color cycle
@@ -14,7 +16,7 @@ colors = list(plt.cm.tab20.colors) + list(plt.cm.tab20b.colors)
 mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=colors) 
 
 from model import AutoEncoder, Encoder
-from dataset import AggregateIVDatasetForAutoEncoder
+from dataset import AggregateIVDatasetForAutoEncoder, AggregateLatentDataset
 from utils import Sensor, DATABASE_DIR
 
 
@@ -101,7 +103,7 @@ def plot_latent(model_path: str):
         plt.tight_layout()
         plt.show()
 
-def explain_latent(model_path: str, dim: int, num_samples: int=100, ):
+def explain_latent_on_data(model_path: str, dim: int, num_samples: int=100, ):
     if torch.cuda.is_available():
         device = torch.device("cuda")
     elif torch.backends.mps.is_available():
@@ -120,14 +122,14 @@ def explain_latent(model_path: str, dim: int, num_samples: int=100, ):
     # select a set of background examples to take an expectation over
     background_idx = set(random.sample(range(len(dataset)), k=300))
     background = [dataset[i][0][[1],:] for i in background_idx] # take i curve only
-    background = torch.stack(background, dim=0).to(device).float()
+    background = torch.stack(background, dim=0).float().to(device)
     e = shap.DeepExplainer(model, background)
     
     
     input_to_explain = [dataset[i] for i in range(len(dataset)) if i not in background_idx]
     i_curves_to_explain = [out[0][[1],:] for out in input_to_explain]
     seq_lens = [out[1] for out in input_to_explain]
-    i_curves_to_explain = torch.stack(i_curves_to_explain, dim=0).to(device).float()
+    i_curves_to_explain = torch.stack(i_curves_to_explain, dim=0).float().to(device)
     
     # explain output of the encoder
     
@@ -146,17 +148,40 @@ def explain_latent(model_path: str, dim: int, num_samples: int=100, ):
     # plt.savefig(f"dim{dim}.png")
     plt.show()
     plt.close()
-    
-    # sample = 0
-    # for dim in range(16):
-    #     plt.figure(figsize=(14,10))
-    #     sc = plt.plt.scatter(volt_grid[:seq_lens[sample]], i_curves_to_explain[sample].cpu().detach().squeeze()[:seq_lens[sample]] , c=shap_values[i,:,:,dim].squeeze()[:seq_lens[sample]], cmap=plt.get_cmap("RdBu").reversed(),norm=norm)
-    #     plt.colorbar(sc, label=f"SHAP Values on Dim {dim}")
-    #     plt.show()
 
+def explain_latent_corr(model_path: str):
+    dataset = AggregateLatentDataset(DATABASE_DIR, model_path)
+    
+    selected_metrics = [0,1,3,4,5,7]
+    X = [torch.tensor([dataset[i][j] for j in selected_metrics]) for i in range(len(dataset))] # metrics
+    Y = [dataset[i][9].squeeze() for i in range(len(dataset))] # latents
+    X = torch.stack(X, dim=0)
+    Y = torch.stack(Y, dim=0)
+    # print(X.shape, Y.shape) (402, 6), (402, 18)
+    
+    corr_matrix = np.zeros((6, 18))
+    for i in range(X.shape[1]):
+        for j in range(Y.shape[1]):
+            corr_matrix[i, j], _ = spearmanr(X[:,i], Y[:,j])
+    
+    plt.figure(figsize=(16, 6))
+    input_names = ["Temperature", "Date", "Humidity", "Ramp Type", "Duration", "Sensor Number"]
+    norm = TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1)
+    sns.heatmap(corr_matrix, annot=True, cmap=plt.get_cmap("RdBu").reversed(), 
+                yticklabels=[input_names[i] for i in range(corr_matrix.shape[0])], 
+                xticklabels=[f"Dim {j}" for j in range(corr_matrix.shape[1])],
+                fmt=".2f", norm=norm)
+    plt.xlabel("Latent Dimensions")
+    plt.ylabel("Environmental Conditions")
+    plt.title("Spearman Correlation Coefficients")
+    plt.tight_layout()
+    plt.show()
 
 if __name__ == '__main__':
-    model_path = "autoencoder_model/ivcvscans-2025-07-29-22:58:43/e211_l23.311.pth"
-    plot_latent(model_path)
+    # model_path = "autoencoder_model/ivcvscans-2025-07-29-22:58:43/e211_l23.311.pth"
+    model_path = "autoencoder_model/ivcvscans-2025-07-29-23:40:59/e108_l18.894.pth"
+    # model_path = "/Users/elly/Desktop/Brown/UTRA/LGAD_analysis/autoencoder_model/ivcvscans-2025-07-28-20:20:03/e275_l0.010.pth"
+    # plot_latent(model_path)
     # for i in range(16):
-    #     explain_latent(model_path, dim=i, num_samples=10)
+        # explain_latent_on_data(model_path, dim=i, num_samples=10)
+    explain_latent_corr(model_path)

@@ -1,0 +1,140 @@
+import shutil
+import random
+import os
+
+import seaborn as sns
+from scipy.special import softmax
+import torch 
+import torch.nn as nn
+import torch.optim as optim 
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.data import DataLoader 
+import matplotlib.pylab as plt
+import numpy as np
+import shap
+
+from tqdm import tqdm 
+from datetime import datetime
+
+from model import AutoEncoder, EnvToLatent
+from dataset import AggregateLatentDataset
+from utils import Sensor, DATABASE_DIR, disable_top_and_right_bounds
+
+
+def criterion(output, target):
+    return torch.mean(torch.square(output - target))
+    
+def train():
+    """
+    Trains an MLP that maps environmental variables to corresponding 
+    latent vectors generated from IV scan
+    """
+    start_time = datetime.now()
+    train_dir = f"./env_to_latent_model/{DATABASE_DIR.split(os.sep)[-1]}-{start_time.strftime("%Y-%m-%d-%H:%M:%S")}"
+    os.makedirs(train_dir)
+    
+    # back-up the model.py
+    shutil.copy("./model.py", f"{train_dir}/model-{start_time.strftime("%Y-%m-%d-%H:%M:%S")}.py")
+    # back-up the train_autoencoder.py
+    shutil.copy("./train_autoencoder.py", f"{train_dir}/train_env_to_latent-{start_time.strftime("%Y-%m-%d-%H:%M:%S")}.py")
+    config = {
+        'lr': 0.0005,        # Learning rate
+        'batch_size': 1,    # Single video per batch
+        'num_epochs': 300,   # Number of full passes over data
+    }
+    
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+    
+    print(f"Using device: {device}")
+    dataset = AggregateLatentDataset(DATABASE_DIR, "autoencoder_model/ivcvscans-2025-07-29-23:40:59/e108_l18.894.pth")
+    train_loader = DataLoader(dataset, batch_size=1, shuffle=True)
+    
+    # initialize model 
+    model = EnvToLatent().to(device)
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Total parameters: {total_params}")
+    print(f"Trainable parameters: {trainable_params}")
+    
+    optimizer = optim.Adam(model.parameters(), lr=config['lr'])
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=8, min_lr=1e-8)
+    
+    model.train() 
+    
+    min_epoch_loss = float('inf')
+    
+    for epoch in range(config['num_epochs']):
+        epoch_loss = 0
+        
+        for temp, date, iv_curve, humi, ramp_type, dura, seq_len, sensor_num, sensor_name, t_latent in tqdm(train_loader):
+            t_latent = t_latent.to(device)
+            metrics = torch.stack([temp, date, humi, ramp_type, dura, sensor_num], dim=1).float().to(device)
+            optimizer.zero_grad()
+            
+            p_latent = model(metrics)
+            # print(output.shape, iv_curve.shape)
+            loss = criterion(p_latent, t_latent)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
+            optimizer.step()
+
+            epoch_loss += loss.item()
+        
+        avg_loss = epoch_loss / len(train_loader)
+        scheduler.step(avg_loss)
+        if avg_loss < min_epoch_loss: # save model
+            min_epoch_loss = avg_loss
+            torch.save(model.state_dict(), f"{train_dir}/e{epoch}_l{avg_loss:.3g}.pth")
+            
+        print(f"Epoch {epoch}, Loss: {avg_loss:.4g}, lr: {optimizer.param_groups[0]['lr']}")
+
+def explain(model_path: str):
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+    
+    print(f"Using device: {device}")
+    
+    dataset = AggregateLatentDataset(DATABASE_DIR, "autoencoder_model/ivcvscans-2025-07-29-23:40:59/e108_l18.894.pth")
+    
+    model = EnvToLatent().to(device)
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval()
+    
+    background_idx = set(random.sample(range(len(dataset)), k=300))
+    selected_metrics = set([0,1,3,4,5,7])
+    background = [torch.tensor([dataset[i][j] for j in selected_metrics]) for i in background_idx]
+    background = torch.stack(background, dim=0).float().to(device)
+    e = shap.DeepExplainer(model, background)
+    
+    
+    input_to_explain = [torch.tensor([dataset[i][j] for j in selected_metrics]) for i in range(len(dataset)) if i not in background_idx]
+    input_to_explain = torch.stack(input_to_explain, dim=0).float().to(device)
+    shap_values = e.shap_values(input_to_explain) 
+    # print(shap_values.shape) # (num_samples, 6, 18)
+    
+    mean_abs_shap_per_output = np.mean(np.abs(shap_values), axis=0)
+    contribution_per_input = softmax(mean_abs_shap_per_output, axis=0)
+    input_names = ["Temperature", "Date", "Humidity", "Ramp Type", "Duration", "Sensor Number"]
+    plt.figure(figsize=(16, 6))
+    sns.heatmap(contribution_per_input, annot=True, cmap=plt.get_cmap("RdBu").reversed(), 
+                yticklabels=[input_names[i] for i in range(6)], 
+                xticklabels=[f"Dim {j}" for j in range(18)],
+                fmt=".2f")
+    plt.xlabel("Latent Space Dimension")
+    plt.ylabel("Input Feature")
+    plt.title("Relative SHAP Magnitude Per Input")
+    plt.tight_layout()
+    plt.show()
+    
+if __name__ == "__main__":
+    # train()
+    explain("env_to_latent_model/ivcvscans-2025-07-29-21:32:59/e219_l5.37.pth")
