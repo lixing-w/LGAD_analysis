@@ -538,6 +538,8 @@ def is_close(a: float, b: float, tol: float, cmp_abs=True):
 
 def temperature_to_color(temperature: float):
     # Map temperature to a rainbow color (purple to red)
+    if temperature is None:
+        temperature = float('inf')
     min_temp, max_temp = -60, 120
     norm_temp = (temperature - min_temp) / (max_temp - min_temp)
     return plt.cm.rainbow(norm_temp)

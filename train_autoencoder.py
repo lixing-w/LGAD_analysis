@@ -43,8 +43,10 @@ def criterion(output, target, seq_len, pred_metrics, target_metrics):
     mse_2deriv = torch.mean(torch.abs(torch.diff(output, n=2)[:,:,40:int(seq_len*0.9)])) # [] #[:,:,30:120]
     
     bias_loss = torch.mean(torch.abs(torch.mean(output - target, dim=2)))
+    
+    l1_loss = torch.mean(torch.abs(output - target)) + torch.mean(torch.abs(output_diff - target_diff))
     # so the loss of reconstruction is:
-    curve_loss = mse + mse_1deriv + mse_2deriv * 0.7 + bias_loss #+ smooth_diff * 0.1 + smooth_coeff * 0.025 # 0.025
+    curve_loss = mse + mse_1deriv + mse_2deriv + l1_loss *1.7 + bias_loss * 1.1 #+ smooth_diff * 0.1 + smooth_coeff * 0.025 # 0.025
     
     # 2. then find loss of metrics prediction
     temp_loss = 0 if target_metrics[:,0] == float('inf') else torch.square(pred_metrics[:,0] - target_metrics[:,0])
@@ -54,7 +56,7 @@ def criterion(output, target, seq_len, pred_metrics, target_metrics):
     dura_loss = 0 if target_metrics[:,4] == float('inf') else torch.square(pred_metrics[:,4] - target_metrics[:,4])
     
     metrics_loss = temp_loss+date_sensor_num_loss+humi_loss+ramp_type_loss+dura_loss
-    return curve_loss + metrics_loss * 0.3
+    return curve_loss + metrics_loss * 0.2
 
 def aggregate_train():
     """ 
@@ -77,7 +79,7 @@ def aggregate_train():
     config = {
         'lr': 0.0005,        # Learning rate
         'batch_size': 1,    # Single video per batch
-        'num_epochs': 300,   # Number of full passes over data
+        'num_epochs': 100,   # Number of full passes over data
     }
     
     if torch.cuda.is_available():
@@ -200,5 +202,5 @@ def aggregate_run(model_path: str):
 if __name__ == '__main__':
     # train("DC_W3058")
     # run("autoencoder_model/ivcvscans-DC_W3058-2025-07-28-00:10:19/e292_l0.018.pth")
-    aggregate_train()
-    # aggregate_run("autoencoder_model/ivcvscans-2025-07-29-23:40:59/e108_l18.894.pth")
+    # aggregate_train()
+    aggregate_run("autoencoder_model/ivcvscans-2025-07-30-06:51:58/e97_l12.517.pth")

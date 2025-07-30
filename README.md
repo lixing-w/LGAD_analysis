@@ -269,3 +269,18 @@ Dev logs:
         - suppressed numpy invalid value and division by zero err when taking 
           log of leakage current; we removed NaNs and Infs afterwards
         - reformatted README
+    
+    Jul 29 (Lixing)
+        - improved model architecture and loss fxn after many experiment;
+          tweaked CNN layers' channel numbers and selectively added LayerNorm;
+          added L1 loss component; 
+          achiving reconstruction results with RMSE of 0.117 on training
+          data after 100 epochs; much faster convergence and higher accuracy
+        - added an MLP which predicts environmental vars based on 
+          latent, in the AE; semi-supervised learning to nudge more 
+          interpreble latent space
+        - added spearman correlation and SHAP analysis to correlate 
+          environmental variables with latent dimensions
+        - added an MLP which predicts latent based on environmental vars,
+          used for SHAP analysis
+        - bug fixes for running code on windows

@@ -384,7 +384,7 @@ def find_breakdown(xs: np.ndarray, ys: np.ndarray, start_idx: int, path: str, bd
             setup_legend(ax1, ax2)
             plt.title(f'{str} Voltage Frequency Distribution (Best: {filtered_lines[0][col]:.2f} +/- {std:.2f} V)')
             plt.tight_layout()
-            plt.savefig(f"{path.removesuffix(".txt").removesuffix(".iv")}_{save_str}_freq.png")
+            plt.savefig(f"{path.removesuffix('.txt').removesuffix('.iv')}_{save_str}_freq.png")
             plt.close()
         if plot: # plot distribution (max weight) and rmse
             plt.figure(figsize=(8,6))
@@ -401,7 +401,7 @@ def find_breakdown(xs: np.ndarray, ys: np.ndarray, start_idx: int, path: str, bd
             setup_legend(ax1, ax2)
             plt.title(f'{str} Voltage Max Weight Distribution (Best: {filtered_lines[0][col]:.2f} +/- {std:.2f} V)')
             plt.tight_layout()
-            plt.savefig(f"{path.removesuffix(".txt").removesuffix(".iv")}_{save_str}_max.png")
+            plt.savefig(f"{path.removesuffix('.txt').removesuffix('.iv')}_{save_str}_max.png")
             plt.close()
         
     plot_entry(4, "Breakdown", bd_std)
@@ -496,14 +496,14 @@ def analyze_sensor_iv(sensor: Sensor, curr_type: str='pad', plot=True):
             try:
                 first_idx_after_dep_v = np.where(xs > dep_v)[0][0]
             except: # cannot find voltage after dep_v, either dep_v too high or voltage range too small 
-                save_dir = f"{os.path.join(dir, scan_path.removesuffix(".txt").removesuffix(".iv"))}_ivscan_warn.png"
+                save_dir = f"{os.path.join(dir, scan_path.removesuffix('.txt').removesuffix('.iv'))}_ivscan_warn.png"
                 print(f"Warning: Scan at {os.path.join(dir, scan_path)} voltage range too small. Should be ignored or try a different depletion voltage. IV scan plot generated at {save_dir}.")
                 plt.figure(figsize=(10, 6))
                 # a. plot the scan itself
                 plt.plot(xs, ys_log10, label=rf"Scan at {temperature}$^\circ$C", color=temperature_to_color(temperature), marker='o', markersize=3)
                 plt.xlabel("Reverse-bias Voltage (V)")
                 plt.ylabel(f"log(Pad Current (A))")
-                plt.title(rf"IV Scan at {temperature}$^\circ$C: Unable to Find Breakdown V; Range too Small ({sensor.name} {date.strftime("%b %d, %Y")})")
+                plt.title(rf"IV Scan at {temperature}$^\circ$C: Unable to Find Breakdown V; Range too Small ({sensor.name} {date.strftime('%b %d, %Y')})")
                 disable_top_and_right_bounds(plt)
                 plt.grid(True, which='major', linestyle='--', linewidth=0.6, alpha=0.7)
                 plt.tight_layout()
@@ -514,14 +514,14 @@ def analyze_sensor_iv(sensor: Sensor, curr_type: str='pad', plot=True):
             if sensor.is_ignored(os.path.join(dir, scan_path)) and plot: # if the iv scan is ignored
                 ignored_scan_count += 1
                 # data ignored, just plot the individual scan, then continue
-                save_dir = f"{os.path.join(dir, scan_path.removesuffix(".txt").removesuffix(".iv"))}_ivscan_ignored.png"
+                save_dir = f"{os.path.join(dir, scan_path.removesuffix('.txt').removesuffix('.iv'))}_ivscan_ignored.png"
                 print(f"Ignoring {os.path.join(dir, scan_path)}. IV scan plot generated at {save_dir}.")
                 plt.figure(figsize=(10, 6))
 
                 plt.plot(xs, ys_log10, label=rf"Scan at {temperature}$^\circ$C", color=temperature_to_color(temperature), marker='o', markersize=3)
                 plt.xlabel("Reverse-bias Voltage (V)")
                 plt.ylabel(f"log(Pad Current (A))")
-                plt.title(rf"IV Scan at {temperature}$^\circ$C: Ignored ({sensor.name} {date.strftime("%b %d, %Y")})")
+                plt.title(rf"IV Scan at {temperature}$^\circ$C: Ignored ({sensor.name} {date.strftime('%b %d, %Y')})")
                 disable_top_and_right_bounds(plt)
                 plt.grid(True, which='major', linestyle='--', linewidth=0.6, alpha=0.7)
                 plt.tight_layout()
@@ -535,14 +535,14 @@ def analyze_sensor_iv(sensor: Sensor, curr_type: str='pad', plot=True):
             
             # if line is None, something's wrong! We just plot the scan itself, and warn the user 
             if lines is None:
-                save_dir = f"{os.path.join(dir, scan_path.removesuffix(".txt").removesuffix(".iv"))}_ivscan_warn.png"
+                save_dir = f"{os.path.join(dir, scan_path.removesuffix('.txt').removesuffix('.iv'))}_ivscan_warn.png"
                 print(f"Warning: Scan at {os.path.join(dir, scan_path)} deprecated. Should be ignored or try a different current type. IV scan plot generated at {save_dir}.")
                 plt.figure(figsize=(10, 6))
                 # a. plot the scan itself
                 plt.plot(xs, ys_log10, label=rf"Scan at {temperature}$^\circ$C", color=temperature_to_color(temperature), marker='o', markersize=3)
                 plt.xlabel("Reverse-bias Voltage (V)")
                 plt.ylabel(f"log(Pad Current (A))")
-                plt.title(rf"IV Scan at {temperature}$^\circ$C: Unable to Find Breakdown V ({sensor.name} {date.strftime("%b %d, %Y")})")
+                plt.title(rf"IV Scan at {temperature}$^\circ$C: Unable to Find Breakdown V ({sensor.name} {date.strftime('%b %d, %Y')})")
                 disable_top_and_right_bounds(plt)
                 plt.grid(True, which='major', linestyle='--', linewidth=0.6, alpha=0.7)
                 plt.tight_layout()
@@ -574,12 +574,12 @@ def analyze_sensor_iv(sensor: Sensor, curr_type: str='pad', plot=True):
                 
                 plt.xlabel("Reverse-bias Voltage (V)")
                 plt.ylabel("log(Pad Current (A))")
-                plt.title(rf"IV Scan at {temperature}$^\circ$C: Breakdown {primary_line[2]:.2f} +/- {bd_std:.2f} V, Depletion {primary_line[3]:.2f} +/- {dp_std:.2f} V ({sensor.name} {date.strftime("%b %d, %Y")})")
+                plt.title(rf"IV Scan at {temperature}$^\circ$C: Breakdown {primary_line[2]:.2f} +/- {bd_std:.2f} V, Depletion {primary_line[3]:.2f} +/- {dp_std:.2f} V ({sensor.name} {date.strftime('%b %d, %Y')})")
                 disable_top_and_right_bounds(plt)
                 plt.legend()
                 plt.grid(True, which='major', linestyle='--', linewidth=0.6, alpha=0.7)
                 plt.tight_layout()
-                plt.savefig(f"{os.path.join(dir, scan_path.removesuffix(".txt").removesuffix(".iv"))}_ivscan.png")
+                plt.savefig(f"{os.path.join(dir, scan_path.removesuffix('.txt').removesuffix('.iv'))}_ivscan.png")
                 plt.close()
             all_data_in_dir.append([temperature, date, data, humidity, ramp_type, primary_line[2], bd_std])
 
@@ -624,7 +624,7 @@ def analyze_sensor_iv(sensor: Sensor, curr_type: str='pad', plot=True):
                     plt.ylabel("Current (A)")
                     plt.yscale('log')
                     plt.legend()
-                    plt.title(f"IV Scan of {sensor.name} on {date.strftime("%b %d, %Y")} ({curr_type_str}{ramp_title_str[ramp_type]})")
+                    plt.title(f"IV Scan of {sensor.name} on {date.strftime('%b %d, %Y')} ({curr_type_str}{ramp_title_str[ramp_type]})")
                     plt.grid(True, which='major', linestyle='--', linewidth=0.6, alpha=0.7)
                     plt.tight_layout()
                     plt.savefig(os.path.join(dir, f"{sensor.name}_{ramp_save_str[ramp_type]}_{curr_type}_all.png"))
@@ -802,14 +802,14 @@ def analyze_file_iv(sensor: Sensor, path: str, curr_type: str='pad', plot=True):
     try:
         first_idx_after_dep_v = np.where(xs > dep_v)[0][0]
     except: # cannot find voltage after dep_v, either dep_v too high or voltage range too small 
-        save_dir = f"{path.removesuffix(".txt").removesuffix(".iv")}_ivscan_warn.png"
+        save_dir = f"{path.removesuffix('.txt').removesuffix('.iv')}_ivscan_warn.png"
         print(f"Warning: Scan at {path} voltage range too small. Should be ignored or try a different depletion voltage. IV scan plot generated at {save_dir}.")
         plt.figure(figsize=(10, 6))
         # a. plot the scan itself
         plt.plot(xs, ys_log10, label=rf"Scan at {temperature}$^\circ$C", color=temperature_to_color(temperature), marker='o', markersize=3)
         plt.xlabel("Reverse-bias Voltage (V)")
         plt.ylabel(f"log(Pad Current (A))")
-        plt.title(rf"IV Scan at {temperature}$^\circ$C: Unable to Find Breakdown V; Range too Small ({sensor.name} {date.strftime("%b %d, %Y")})")
+        plt.title(rf"IV Scan at {temperature}$^\circ$C: Unable to Find Breakdown V; Range too Small ({sensor.name} {date.strftime('%b %d, %Y')})")
         disable_top_and_right_bounds(plt)
         plt.grid(True, which='major', linestyle='--', linewidth=0.6, alpha=0.7)
         plt.tight_layout()
@@ -820,13 +820,13 @@ def analyze_file_iv(sensor: Sensor, path: str, curr_type: str='pad', plot=True):
     if sensor.is_ignored(path) and plot: # if the iv scan is ignored
         ignored_scan_count += 1
         # data ignored, just plot the individual scan, then continue
-        save_dir = f"{path.removesuffix(".txt").removesuffix(".iv")}_ivscan_ignored.png"
+        save_dir = f"{path.removesuffix('.txt').removesuffix('.iv')}_ivscan_ignored.png"
         print(f"Ignoring {path}. IV scan plot generated at {save_dir}.")
         plt.figure(figsize=(10, 6))
         plt.plot(xs, ys_log10, label=rf"Scan at {temperature}$^\circ$C", color=temperature_to_color(temperature), marker='o', markersize=3)
         plt.xlabel("Reverse-bias Voltage (V)")
         plt.ylabel(f"log(Pad Current (A))")
-        plt.title(rf"IV Scan at {temperature}$^\circ$C: Ignored ({sensor.name} {date.strftime("%b %d, %Y")})")
+        plt.title(rf"IV Scan at {temperature}$^\circ$C: Ignored ({sensor.name} {date.strftime('%b %d, %Y')})")
         disable_top_and_right_bounds(plt)
         plt.grid(True, which='major', linestyle='--', linewidth=0.6, alpha=0.7)
         plt.tight_layout()
@@ -839,14 +839,14 @@ def analyze_file_iv(sensor: Sensor, path: str, curr_type: str='pad', plot=True):
     # sorted by inlier_count (decreasing), then by RMSE (increasing)
     # if line is None, something's wrong! We just plot the scan itself, and warn the user 
     if lines is None:
-        save_dir = f"{path.removesuffix(".txt").removesuffix(".iv")}_ivscan_warn.png"
+        save_dir = f"{path.removesuffix('.txt').removesuffix('.iv')}_ivscan_warn.png"
         print(f"Warning: Scan at {path} deprecated. Should be ignored or try a different current type. IV scan plot generated at {save_dir}.")
         plt.figure(figsize=(10, 6))
         # a. plot the scan itself
         plt.plot(xs, ys_log10, label=rf"Scan at {temperature}$^\circ$C", color=temperature_to_color(temperature), marker='o', markersize=3)
         plt.xlabel("Reverse-bias Voltage (V)")
         plt.ylabel(f"log(Pad Current (A))")
-        plt.title(rf"IV Scan at {temperature}$^\circ$C: Unable to Find Breakdown V ({sensor.name} {date.strftime("%b %d, %Y")})")
+        plt.title(rf"IV Scan at {temperature}$^\circ$C: Unable to Find Breakdown V ({sensor.name} {date.strftime('%b %d, %Y')})")
         disable_top_and_right_bounds(plt)
         plt.grid(True, which='major', linestyle='--', linewidth=0.6, alpha=0.7)
         plt.tight_layout()
@@ -878,12 +878,12 @@ def analyze_file_iv(sensor: Sensor, path: str, curr_type: str='pad', plot=True):
         
         plt.xlabel("Reverse-bias Voltage (V)")
         plt.ylabel("log(Pad Current (A))")
-        plt.title(rf"IV Scan at {temperature}$^\circ$C: Breakdown {primary_line[2]:.2f} +/- {bd_std:.2f} V, Depletion {primary_line[3]:.2f} +/- {dp_std:.2f} V ({sensor.name} {date.strftime("%b %d, %Y")})")
+        plt.title(rf"IV Scan at {temperature}$^\circ$C: Breakdown {primary_line[2]:.2f} +/- {bd_std:.2f} V, Depletion {primary_line[3]:.2f} +/- {dp_std:.2f} V ({sensor.name} {date.strftime('%b %d, %Y')})")
         disable_top_and_right_bounds(plt)
         plt.legend()
         plt.grid(True, which='major', linestyle='--', linewidth=0.6, alpha=0.7)
         plt.tight_layout()
-        plt.savefig(f"{path.removesuffix(".txt").removesuffix(".iv")}_ivscan.png")
+        plt.savefig(f"{path.removesuffix('.txt').removesuffix('.iv')}_ivscan.png")
         plt.close()
 
     # roll-back the overrides 
@@ -1017,7 +1017,7 @@ def analyze_sensor_cv(sensor: Sensor, plot: bool=True):
                 plt.plot(v_data, c_data, label=rf"Scan at {temperature}$^\circ$C", color=temperature_to_color(temperature), marker='o', markersize=3)
                 plt.xlabel("Reverse-bias Voltage (V)")
                 plt.ylabel(f"log(Pad Current (A))")
-                plt.title(rf"IV Scan at {temperature}$^\circ$C: Ignored ({sensor.name} {date.strftime("%b %d, %Y")})")
+                plt.title(rf"IV Scan at {temperature}$^\circ$C: Ignored ({sensor.name} {date.strftime('%b %d, %Y')})")
                 disable_top_and_right_bounds(plt)
                 plt.grid(True, which='major', linestyle='--', linewidth=0.6, alpha=0.7)
                 plt.tight_layout()

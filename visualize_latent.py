@@ -179,7 +179,7 @@ def explain_latent_corr(model_path: str):
 
 if __name__ == '__main__':
     # model_path = "autoencoder_model/ivcvscans-2025-07-29-22:58:43/e211_l23.311.pth"
-    model_path = "autoencoder_model/ivcvscans-2025-07-29-23:40:59/e108_l18.894.pth"
+    model_path = "autoencoder_model/ivcvscans-2025-07-30-06:27:08/e102_l14.367.pth"
     # model_path = "/Users/elly/Desktop/Brown/UTRA/LGAD_analysis/autoencoder_model/ivcvscans-2025-07-28-20:20:03/e275_l0.010.pth"
     # plot_latent(model_path)
     # for i in range(16):
