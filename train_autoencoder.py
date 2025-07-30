@@ -69,13 +69,13 @@ def aggregate_train():
     And models.py and train_autoencoder.py (this file) are backed up there as well.
     """
     start_time = datetime.now()
-    train_dir = f"./autoencoder_model/{DATABASE_DIR.split(os.sep)[-1]}-{start_time.strftime('%Y-%m-%d-%H:%M:%S')}"
+    train_dir = f"./autoencoder_model/{DATABASE_DIR.split(os.sep)[-1]}-{start_time.strftime('%Y-%m-%d-%H-%M-%S')}"
     os.makedirs(train_dir)
     
     # back-up the model.py
-    shutil.copy("./model.py", f"{train_dir}/model-{start_time.strftime('%Y-%m-%d-%H:%M:%S')}.py")
+    shutil.copy("./model.py", f"{train_dir}/model-{start_time.strftime('%Y-%m-%d-%H-%M-%S')}.py")
     # back-up the train_autoencoder.py
-    shutil.copy("./train_autoencoder.py", f"{train_dir}/train_autoencoder-{start_time.strftime('%Y-%m-%d-%H:%M:%S')}.py")
+    shutil.copy("./train_autoencoder.py", f"{train_dir}/train_autoencoder-{start_time.strftime('%Y-%m-%d-%H-%M-%S')}.py")
     config = {
         'lr': 0.0005,        # Learning rate
         'batch_size': 1,    # Single video per batch
@@ -203,4 +203,4 @@ if __name__ == '__main__':
     # train("DC_W3058")
     # run("autoencoder_model/ivcvscans-DC_W3058-2025-07-28-00:10:19/e292_l0.018.pth")
     # aggregate_train()
-    aggregate_run("autoencoder_model/ivcvscans-2025-07-30-06:51:58/e97_l12.517.pth")
+    aggregate_run("autoencoder_model/ivcvscans-2025-07-30-06-51-58/e97_l12.517.pth")

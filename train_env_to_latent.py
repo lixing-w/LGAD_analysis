@@ -24,19 +24,19 @@ from utils import Sensor, DATABASE_DIR, disable_top_and_right_bounds
 def criterion(output, target):
     return torch.mean(torch.square(output - target))
     
-def train():
+def train(autoencoder_model_path: str):
     """
     Trains an MLP that maps environmental variables to corresponding 
     latent vectors generated from IV scan
     """
     start_time = datetime.now()
-    train_dir = f"./env_to_latent_model/{DATABASE_DIR.split(os.sep)[-1]}-{start_time.strftime("%Y-%m-%d-%H:%M:%S")}"
+    train_dir = f"./env_to_latent_model/{DATABASE_DIR.split(os.sep)[-1]}-{start_time.strftime('%Y-%m-%d-%H-%M-%S')}"
     os.makedirs(train_dir)
     
     # back-up the model.py
-    shutil.copy("./model.py", f"{train_dir}/model-{start_time.strftime("%Y-%m-%d-%H:%M:%S")}.py")
+    shutil.copy("./model.py", f"{train_dir}/model-{start_time.strftime('%Y-%m-%d-%H-%M-%S')}.py")
     # back-up the train_autoencoder.py
-    shutil.copy("./train_autoencoder.py", f"{train_dir}/train_env_to_latent-{start_time.strftime("%Y-%m-%d-%H:%M:%S")}.py")
+    shutil.copy("./train_autoencoder.py", f"{train_dir}/train_env_to_latent-{start_time.strftime('%Y-%m-%d-%H-%M-%S')}.py")
     config = {
         'lr': 0.0005,        # Learning rate
         'batch_size': 1,    # Single video per batch
@@ -51,7 +51,7 @@ def train():
         device = torch.device("cpu")
     
     print(f"Using device: {device}")
-    dataset = AggregateLatentDataset(DATABASE_DIR, "autoencoder_model/ivcvscans-2025-07-29-23:40:59/e108_l18.894.pth")
+    dataset = AggregateLatentDataset(DATABASE_DIR, autoencoder_model_path)
     train_loader = DataLoader(dataset, batch_size=1, shuffle=True)
     
     # initialize model 
@@ -62,7 +62,7 @@ def train():
     print(f"Trainable parameters: {trainable_params}")
     
     optimizer = optim.Adam(model.parameters(), lr=config['lr'])
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=8, min_lr=1e-8)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=5, min_lr=1e-8)
     
     model.train() 
     
@@ -93,7 +93,7 @@ def train():
             
         print(f"Epoch {epoch}, Loss: {avg_loss:.4g}, lr: {optimizer.param_groups[0]['lr']}")
 
-def explain(model_path: str):
+def explain(model_path: str, autoencoder_model_path: str):
     if torch.cuda.is_available():
         device = torch.device("cuda")
     elif torch.backends.mps.is_available():
@@ -103,7 +103,7 @@ def explain(model_path: str):
     
     print(f"Using device: {device}")
     
-    dataset = AggregateLatentDataset(DATABASE_DIR, "autoencoder_model/ivcvscans-2025-07-29-23:40:59/e108_l18.894.pth")
+    dataset = AggregateLatentDataset(DATABASE_DIR, autoencoder_model_path)
     
     model = EnvToLatent().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
@@ -113,7 +113,7 @@ def explain(model_path: str):
     selected_metrics = set([0,1,3,4,5,7])
     background = [torch.tensor([dataset[i][j] for j in selected_metrics]) for i in background_idx]
     background = torch.stack(background, dim=0).float().to(device)
-    e = shap.DeepExplainer(model, background)
+    e = shap.GradientExplainer(model, background)
     
     
     input_to_explain = [torch.tensor([dataset[i][j] for j in selected_metrics]) for i in range(len(dataset)) if i not in background_idx]
@@ -136,5 +136,6 @@ def explain(model_path: str):
     plt.show()
     
 if __name__ == "__main__":
-    # train()
-    explain("env_to_latent_model/ivcvscans-2025-07-29-21:32:59/e219_l5.37.pth")
+    # train("autoencoder_model/ivcvscans-2025-07-30-06-51-58/e97_l12.517.pth")
+    explain("env_to_latent_model/ivcvscans-2025-07-30-13-56-33/e161_l0.229.pth", 
+            "autoencoder_model/ivcvscans-2025-07-30-06-51-58/e97_l12.517.pth")

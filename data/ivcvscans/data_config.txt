@@ -10,11 +10,15 @@ DR N:DC_W3058 T:-60 D:26/10/2023
 DR N:DC_W3058 T:~-40 RT:-1 D:25/10/2023
 DR N:DC_W3058 T:~-40 D:30/10/2023
 DR N:BNL_ACLGAD_STRIP25 D:06/07/2021 R:_1.cv
+
+DR N:HPK_LGAD_1_2_4 D:22/06/2021 R:.iv # problematic scan?
 DR N:HPK_LGAD_3.1_1 D:22/06/2021 R:.iv # problematic scan?
-DR N:HPK_LGAD_3_1_4 D:22/06/2021 R:_1.cv # inconsistent measurement, showing dep around 20V but other scans all show around 45V
-DR N:HPK_LGAD_3_1_3 D:22/06/2021 R:_1.cv # inconsistent measurement, showing dep around 20V but other scans all show around 45V
-DR N:HPK_LGAD_3_1_5 D:22/06/2021 R:_1.cv # inconsistent measurement, showing dep around 20V but other scans all show around 45V
-DR N:HPK_LGAD_3_1_6 D:22/06/2021 R:_1.cv # inconsistent measurement, showing dep around 20V but other scans all show around 45V
+DR N:HPK_LGAD_3.1_2 D:22/06/2021 R:.iv # problematic scan?
+DR N:HPK_LGAD_3_1_4 D:22/06/2021 # inconsistent measurement, showing dep around 20V but other scans all show around 45V
+DR N:HPK_LGAD_3_1_3 D:22/06/2021 # inconsistent measurement, showing dep around 20V but other scans all show around 45V
+DR N:HPK_LGAD_3_1_5 D:22/06/2021 # inconsistent measurement, showing dep around 20V but other scans all show around 45V
+DR N:HPK_LGAD_3_1_6 D:22/06/2021 # inconsistent measurement, showing dep around 20V but other scans all show around 45V
+DR N:HPK_LGAD_3.1_8 D:23/06/2021 R:_1.iv
 DR N:BNL-AC-LGAD-STRIP_GD D:18/06/2021 R:_1.iv # broken data
 DR N:D5 D:21/06/2021 R:.iv
 SPEC N:BNL_LGAD_W3076_12_13 T:-20 D:14/08/2024 R:_7.iv SET DEP:22

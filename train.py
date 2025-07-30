@@ -34,7 +34,7 @@ def loss_fxn(output, target):
     
 def train(sensor_name, start_model_path=None):
     start_time = datetime.now()
-    train_dir = f"./model/{sensor_name}-{start_time.strftime("%Y-%m-%d-%H:%M:%S")}"
+    train_dir = f"./model/{sensor_name}-{start_time.strftime('%Y-%m-%d-%H-%M-%S')}"
     os.makedirs(train_dir)
     config = {
         'lr': 0.005,        # Learning rate

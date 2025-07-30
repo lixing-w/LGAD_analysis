@@ -103,7 +103,7 @@ def plot_latent(model_path: str):
         plt.tight_layout()
         plt.show()
 
-def explain_latent_on_data(model_path: str, dim: int, num_samples: int=100, ):
+def explain_latent_on_data(model_path: str, dim: int, num_samples: int=None, ):
     if torch.cuda.is_available():
         device = torch.device("cuda")
     elif torch.backends.mps.is_available():
@@ -123,7 +123,7 @@ def explain_latent_on_data(model_path: str, dim: int, num_samples: int=100, ):
     background_idx = set(random.sample(range(len(dataset)), k=300))
     background = [dataset[i][0][[1],:] for i in background_idx] # take i curve only
     background = torch.stack(background, dim=0).float().to(device)
-    e = shap.DeepExplainer(model, background)
+    e = shap.GradientExplainer(model, background)
     
     
     input_to_explain = [dataset[i] for i in range(len(dataset)) if i not in background_idx]
@@ -133,10 +133,13 @@ def explain_latent_on_data(model_path: str, dim: int, num_samples: int=100, ):
     
     # explain output of the encoder
     
-    shap_values = e.shap_values(i_curves_to_explain[:num_samples]) # shape (num_samples, 1, 400, 16)
-
+    if num_samples is None:
+        shap_values = e.shap_values(i_curves_to_explain) # shape (num_samples, 1, max_seq_len, latent_dim)
+        num_samples = len(dataset) - 300
+    else:
+        shap_values = e.shap_values(i_curves_to_explain[:num_samples])
     volt_grid = np.arange(0, 400, 1)
-    norm = TwoSlopeNorm(vmin=-shap_values.max()/10, vcenter=0, vmax=shap_values.max()/10)
+    norm = TwoSlopeNorm(vmin=-np.abs(shap_values).max()/5, vcenter=0, vmax=np.abs(shap_values).max()/5)
     plt.figure(figsize=(14,10))
     for i in range(num_samples):
         plt.scatter(volt_grid[:seq_lens[i]], i_curves_to_explain[i].cpu().detach().squeeze()[:seq_lens[i]] , c=shap_values[i,:,:,dim].squeeze()[:seq_lens[i]], cmap=plt.get_cmap("RdBu").reversed(),norm=norm)
@@ -145,8 +148,8 @@ def explain_latent_on_data(model_path: str, dim: int, num_samples: int=100, ):
     plt.ylabel("log(Pad Current (A))")
     plt.colorbar(label=f"SHAP Values on Dim {dim}")
     plt.tight_layout()
-    # plt.savefig(f"dim{dim}.png")
-    plt.show()
+    plt.savefig(f"dim{dim}.png")
+    # plt.show()
     plt.close()
 
 def explain_latent_corr(model_path: str):
@@ -179,9 +182,9 @@ def explain_latent_corr(model_path: str):
 
 if __name__ == '__main__':
     # model_path = "autoencoder_model/ivcvscans-2025-07-29-22:58:43/e211_l23.311.pth"
-    model_path = "autoencoder_model/ivcvscans-2025-07-30-06:27:08/e102_l14.367.pth"
-    # model_path = "/Users/elly/Desktop/Brown/UTRA/LGAD_analysis/autoencoder_model/ivcvscans-2025-07-28-20:20:03/e275_l0.010.pth"
+    model_path = "autoencoder_model/ivcvscans-2025-07-30-06-51-58/e97_l12.517.pth"
+    # model_path = "autoencoder_model/ivcvscans-2025-07-30-09-58-12/e99_l12.069.pth"
     # plot_latent(model_path)
-    # for i in range(16):
-        # explain_latent_on_data(model_path, dim=i, num_samples=10)
-    explain_latent_corr(model_path)
+    for i in range(16):
+        explain_latent_on_data(model_path, dim=i)
+    # explain_latent_corr(model_path)
