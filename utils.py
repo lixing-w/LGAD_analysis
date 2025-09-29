@@ -5,6 +5,8 @@ import numpy as np
 from scipy.optimize import curve_fit
 from datetime import datetime
 from tqdm import tqdm
+import importlib.util
+import torch
 
 """
 A code lib for miscellaneous constants and functions
@@ -22,23 +24,13 @@ print(f"Using Database at {DATABASE_DIR}")
 class Sensor:
     """
     Defines a Sensor object.
-    
-    Fields
-    ------
-    self.name : str
-        A unique identifier
-    self.type : str 
-        Either AC or DC
-    self.depletion_v : float
-    self.sensor_dir : str 
-        Directory to sensor's entire data
-    self.data_dirs : List[str] 
-        A list of directories, each contain just scans
     """
-    def __init__(self, name: str):
+    def __init__(self, name: str, database: str=None):
         """
         name - a string, e.g. "AC_W3096"
+        database - which database is this sensor from. optional
         """
+        database = database if database is not None else DATABASE_DIR
         self.name = name
         self.type = None # either AC or DC. optional
         self.depletion_v = None # should be a float
@@ -55,7 +47,7 @@ class Sensor:
         # directly. in this case, self.data_dir is just the sensor dir.
         
         # directories are relative to project root
-        self.sensor_dir = os.path.join(DATABASE_DIR, self.name)
+        self.sensor_dir = os.path.join(database, self.name)
         def has_subdirectories(folder_path):
             for item in os.listdir(folder_path):
                 if os.path.isdir(os.path.join(folder_path, item)):
@@ -217,7 +209,38 @@ class Sensor:
         if cond is None:
             return None 
         return cond['set_params']
-    
+
+
+def load_model_from_pth(pth_path: str, class_name: str, max_seq_len: int, device='cpu'):
+    head, file_name = os.path.split(pth_path)
+    pattern = r"model-.*.py"
+
+    files = os.listdir(head)
+    matched_files = [f for f in files if re.fullmatch(pattern, f)]
+
+    assert len(matched_files) == 1, "Found zero or more than one model file!"
+    model_file = matched_files[0]
+
+    # now import
+    spec = importlib.util.spec_from_file_location("model_module", str(os.path.join(head, model_file)))
+    model_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(model_module)
+
+    if not hasattr(model_module, class_name):
+        raise AttributeError(f"No class {class_name} in {model_file}")
+
+    model_class = getattr(model_module, class_name)
+    if max_seq_len is None:
+        model = model_class().to(device)
+    else:
+        model = model_class(max_seq_len).to(device)
+
+    state_dict = torch.load(pth_path, map_location=device)
+    model.load_state_dict(state_dict)
+
+    return model
+
+
 def list_sensors():
     """
     Initializes and returns a list of Sensor objects in DATABASE_DIR
@@ -497,7 +520,7 @@ def load_sensor_config(path: str, sensors: list[Sensor], load_iv=True, load_cv=T
 def calculate_weighted_mean(seq: np.ndarray, sigmas: np.ndarray):
     """
     Computes the weighted mean and weighted sigma from a given sequence of 
-    data and their corresponding sigmas.
+    data and their corresponding sigmas. Ignores NaNs and Infs.
     
     Parameters
     ----------
@@ -512,6 +535,9 @@ def calculate_weighted_mean(seq: np.ndarray, sigmas: np.ndarray):
     weighted_sigma : float
     """
     assert seq.shape == sigmas.shape
+    nan_mask = np.isnan(seq) | np.isinf(seq) | np.isnan(sigmas) | np.isinf(sigmas)
+    seq = seq[~nan_mask]
+    sigmas = sigmas[~nan_mask]
     weighted_sigma = np.sqrt(1 / np.sum(1 / np.square(sigmas)))
     weighted_mean = np.sum(seq / np.square(sigmas)) * np.square(weighted_sigma)
     return weighted_mean, weighted_sigma 
@@ -549,17 +575,17 @@ def parse_file_iv(filepath: str, returns_data: bool=True):
         
     Returns
     -------
-    temperature : float
+    temperature : float, None
         Temperature of the measurement, or None if not provided.
     date : datetime 
         Time at which the measurement started.
     data : 2D-array
         A numpy array of data.
-    humidity : float 
+    humidity : float, None
         Humidity of the measurement, or None if not provided.
     ramp_type : int 
         Either 1 (ramp_up), -1 (ramp_down), or 0 (not given).
-    duration : float 
+    duration : float, None
         Number of seconds the measurement lasted, or None if not given.
     """
     ramp_type = 0 
@@ -724,3 +750,48 @@ def determine_spacing(xs: np.ndarray):
     diff = np.diff(xs)
     space = np.abs(diff[:10].mean())
     return round(space)
+
+def dog_1d(size: int, sigma: float=1):
+    """
+    1D Derivative of Gaussian convolution kernel
+    """
+    assert size & 1, f"size must be odd, given {size}"
+
+    ker = np.arange(0, size, 1)
+    ker -= (size // 2)
+    ker = -ker / np.sqrt(2 * np.pi) / sigma**3 * np.exp( -np.square(ker) / (2 * sigma**2))
+    
+    return ker
+
+def nms_1d(arr: np.ndarray, size: int=3):
+    """
+    Non-maximum suppresion with sliding window size size
+    
+    Parameters:
+    arr : 1D-array
+        Array to perform suppression.
+    size : int
+        Window size. Defaults to 3.
+    """
+    assert size & 1, f"window size must be odd, given {size}"
+    assert len(arr.shape) == 1, f"array must be 1D, given shape {arr.shape}"
+    sliding_win_max = []
+    half = size // 2
+    # pad with zero
+    padded = np.pad(arr, (half, half), mode="constant", constant_values=np.min(arr)-1)
+    deque = [] # mono-queue, stores index representing nums in arr!
+    # sliding window max
+    for i in range(size): # i is end of window
+        while len(deque) and padded[deque[-1]] <= padded[i]:
+            deque.pop() # kick numbers below me cuz i know they arent max!
+        deque.append(i) # then deque forms a decreasing sequence, so the head is window max
+    sliding_win_max.append(padded[deque[0]])
+    for i in range(size, len(padded)):
+        while len(deque) and deque[0] <= i - size:
+            deque.pop(0) # remove out of window elements
+        while len(deque) and padded[deque[-1]] <= padded[i]:
+            deque.pop()
+        deque.append(i)
+        sliding_win_max.append(padded[deque[0]])
+    sliding_win_max = np.array(sliding_win_max)
+    return arr * (arr == sliding_win_max)
