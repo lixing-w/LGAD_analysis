@@ -667,11 +667,11 @@ def analyze_sensor_iv(sensor: Sensor, curr_type: str = 'pad', var: str = 'temp',
                 plt.title(
                     rf"IV Scan at {temperature}$^\circ$C: Breakdown {primary_line[2]:.2f} +/- {bd_std:.2f} V, "
                     rf"Depletion {primary_v:.2f} +/- {dp_std:.2f} V ({sensor.name} {date.strftime('%b %d, %Y')})")
-            elif len(bd_lines) == 0 and len(dp_vs) != 0:
+            elif len(bd_lines) != 0 and len(dp_vs) == 0:
                 plt.title(
                     rf"IV Scan at {temperature}$^\circ$C: Breakdown {primary_line[2]:.2f} +/- {bd_std:.2f} V, "
                     rf"Unable to Find Depletion ({sensor.name} {date.strftime('%b %d, %Y')})")
-            elif len(bd_lines) != 0 and len(dp_vs) == 0:
+            elif len(bd_lines) == 0 and len(dp_vs) != 0:
                 plt.title(
                     rf"IV Scan at {temperature}$^\circ$C: Unable to Find Breakdown, "
                     rf"Depletion {primary_v:.2f} +/- {dp_std:.2f} V ({sensor.name} {date.strftime('%b %d, %Y')})")

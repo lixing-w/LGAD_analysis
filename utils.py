@@ -36,6 +36,7 @@ class Sensor:
         self.depletion_v = None # should be a float
         self.iv_scan_data = list() # a list [[temp, avg_volt, avg_humi], ...]
         self.iv_scan_line = list() # a list [slope, offset, avg_sigma]
+        self.thickness = None # in micrometer
         self.bd_thresh = None
         self.cv_scan_data = list() # a list [[c_after_dep, freq, temp], ...]
         self.ignore_cond = list() # a list [{date_range:.., temp_range:.., file:..., regex:..}]
@@ -430,9 +431,9 @@ def write_sensor_config(path: str, sensors: list[Sensor]):
     
     with open(os.path.join(path, "sensor_config.txt"), "w") as f:
         f.write("# This is config file for sensors.\n")
-        f.write("# N:name T:type D:avg_dep_v C:c_after_depletion,freq,temp|... R:bd_thresh L:slope,offset,avg_sigma B:temp,avg_volt,avg_humi|... \n")
+        f.write("# N:name T:type H:thickness D:avg_dep_v C:c_after_depletion,freq,temp|... R:bd_thresh L:slope,offset,avg_sigma B:temp,avg_volt,avg_humi|... \n")
         for sensor in tqdm(sensors, desc="Writing sensor config"):
-            f.write(f"N:{sensor.name:<20} T:{'None' if sensor.type is None else sensor.type:<4} ")
+            f.write(f"N:{sensor.name:<20} T:{'None' if sensor.type is None else sensor.type:<4} H:{'None' if sensor.thickness is None else f'{sensor.thickness:.1f}':<4} ")
 
             f.write(f"D:{'None' if sensor.depletion_v is None else f'{sensor.depletion_v:.3f}'} ")
             if sensor.cv_scan_data is None or len(sensor.cv_scan_data) < 1:
@@ -516,16 +517,18 @@ def load_sensor_config(path: str, sensors: list[Sensor], load_iv=True, load_cv=T
                     continue 
                 pair = tok.split(':')
                 info[pair[0]] = pair[1]
-            
-            name, type, dep_v, cv_scan_data, bd_thresh, iv_scan_data, iv_scan_line = info["N"], info["T"], info["D"], info["C"], info["R"], info["B"], info["L"]
+
+            name, type, dep_v, cv_scan_data, bd_thresh, iv_scan_data, iv_scan_line, thickness = info["N"], info["T"], info["D"], info["C"], info["R"], info["B"], info["L"], info["H"]
             if name not in name_to_sensor:
                 # this sensor is not interested, skip
                 continue 
             sensor = name_to_sensor[name]
             sensor.name = name # name is assumed to be not None
+            assert type == "AC" or type == "DC" or type == "None"
             sensor.type = type if type != "None" else None
             sensor.bd_thresh = float(bd_thresh) if bd_thresh != "None" else None
             sensor.depletion_v = float(dep_v) if dep_v != "None" else None 
+            sensor.thickness = float(thickness) if thickness != "None" else None
             if iv_scan_data != "None" and load_iv:
                 bd_list = iv_scan_data.split('|')
                 bd_list = bd_list[:-1] # remove the trailing empty list since the str ends with '|' 

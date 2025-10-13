@@ -125,9 +125,13 @@ class AggregateIVDatasetForAutoEncoder(Dataset):
         # every sensor is associated with a unique number for identification
         self.sensor_name_to_number = dict()
         self.sensor_number_to_name = dict()
+        self.sensor_number_to_thickness = dict()
+        self.sensor_number_to_type = dict()  # AC = 1, DC = 0
         for i, sensor in enumerate(self.sensors):
             self.sensor_name_to_number[sensor.name] = i
             self.sensor_number_to_name[i] = sensor.name
+            self.sensor_number_to_thickness[i] = sensor.thickness
+            self.sensor_number_to_type[i] = 1 if sensor.type == "AC" else (0 if sensor.type == "DC" else None)
         print(f"Found {len(self.sensors)} sensors in database.")
         print(self.sensor_number_to_name)
         # list all IV scans
@@ -224,11 +228,15 @@ class AggregateIVDatasetForAutoEncoder(Dataset):
         elif self.mode == "full":
             sensor_number = self.all_iv_scans_from_sensor[index]
             sensor_name = self.sensor_number_to_name[sensor_number]
+            sensor_thickness = self.sensor_number_to_thickness[sensor_number]
+            sensor_type = self.sensor_number_to_type[sensor_number]
+            if sensor_thickness is None: sensor_thickness = float('inf')
+            if sensor_type is None: raise ValueError(f"Sensor type for sensor {sensor_name} not specified in sensor_config.txt! Please set it to either 'AC' or 'DC'.")
             if humi is None: humi = float('inf')
             if duration is None: duration = float('inf')
             if ramp_type == 0: ramp_type = float('inf')
             if temperature is None: temperature = float('inf')
-            return temperature, date, iv_seq, humi, ramp_type, duration, seq_len, bd_v, sensor_number, sensor_name
+            return temperature, date, iv_seq, humi, ramp_type, duration, seq_len, bd_v, sensor_number, sensor_name, sensor_thickness, sensor_type
 
 
 class AggregateLatentDataset(AggregateIVDatasetForAutoEncoder):
@@ -280,8 +288,12 @@ class AggregateLatentDataset(AggregateIVDatasetForAutoEncoder):
         iv_seq = torch.from_numpy(data).float()
         sensor_number = self.all_iv_scans_from_sensor[index]
         sensor_name = self.sensor_number_to_name[sensor_number]
+        sensor_thickness = self.sensor_number_to_thickness[sensor_number]
+        sensor_type = self.sensor_number_to_type[sensor_number]
+        if sensor_type is None: raise ValueError(f"Sensor type for sensor {sensor_name} not specified in sensor_config.txt! Please set it to either 'AC' or 'DC'.")
+        if sensor_thickness is None: sensor_thickness = 0
         if humi is None: humi = 0
         if duration is None: duration = 0
         if ramp_type == 0: ramp_type = 0
         if temperature is None: temperature = 25
-        return temperature, date, iv_seq, humi, ramp_type, duration, seq_len, bd_v, sensor_number, sensor_name, latent
+        return temperature, date, iv_seq, humi, ramp_type, duration, seq_len, bd_v, sensor_number, sensor_name, sensor_thickness, sensor_type, latent

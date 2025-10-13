@@ -73,7 +73,9 @@ def predict_curve(autoencoder_model: str, mlp_path: str, temp=None, humi=None, r
     if duration is None: duration = 0
     if sensor_no is None: sensor_no = 0
 
-    metrics = torch.tensor([temp, normalized_date, humi, ramp_type, duration, sensor_no]).float().to(device)
+    # metrics = torch.tensor([temp, normalized_date, humi, ramp_type, duration, sensor_no]).float().to(device)
+    # metrics = torch.tensor([temp, humi, ramp_type, sensor_no, dataset.sensor_number_to_thickness.get(sensor_no, 0.0), dataset.sensor_number_to_type.get(sensor_no, 0)]).float().to(device)
+    metrics = torch.tensor([temp, humi, ramp_type, sensor_no, 50, dataset.sensor_number_to_type.get(sensor_no, 0)]).float().to(device)
     p_latent = mlp_model(metrics)
     p_latent = p_latent.unsqueeze(0)
     if is_conditional:
@@ -121,7 +123,7 @@ def fake_sensor(autoencoder_model: str, mlp_path: str, is_conditional: bool=Fals
     params_list = []  # add env vars for prediction!
     sensor_no = 0
     if analysis_var == 'temp':
-        for temp in range(-40, 130, 10):
+        for temp in range(-20, 130, 10):
             humi = 10 # fix humidity for now
             params_list.append([temp, humi, 0, dataset.date_to_z_score(datetime(2024, 12, 6)), 0, sensor_no])
     elif analysis_var == 'humi':
@@ -137,9 +139,10 @@ def fake_sensor(autoencoder_model: str, mlp_path: str, is_conditional: bool=Fals
                       f"Humidity: {humi} %\n",
                       f"Date: 1970-01-01 00:00:00.000000\n",
                       f"voltage,pad,gr,totalCurrent\n"]
-        volt_grid, p_curve, denoised = predict_curve(autoencoder_model, mlp_path, temp, humi, sensor_no, plot=False, is_conditional=is_conditional)
+        volt_grid, p_curve, denoised = predict_curve(autoencoder_model, mlp_path, temp=temp, humi=humi, ramp_type=ramp_type, sensor_no=sensor_no, plot=False, is_conditional=is_conditional)
         for v, i in zip(volt_grid, denoised):
-            file_lines.append(f"{v},{10 ** i},{0},{10 ** i}\n")
+            if v > 25:  # ignores below 25V
+                file_lines.append(f"{v},{10 ** i},{0},{10 ** i}\n")
 
         with open(os.path.join(path, sensor_name, f"fake-{scan_no}.txt"), mode='w') as f:
             f.writelines(file_lines)
@@ -171,8 +174,8 @@ if __name__ == "__main__":
     # autoencoder_model = "conditional_autoencoder_model/ivcvscans-2025-10-13-11-59-29/e108_l0.332.pth"
     # mlp_model = "env_to_latent_model/ivcvscans-2025-10-13-12-08-01-e2e/e60_l3.557.pth"
     
-    autoencoder_model = "conditional_autoencoder_model/ivcvscans-2025-10-13-13-07-15/e98_l0.244.pth"
-    mlp_model = "env_to_latent_model/ivcvscans-2025-10-13-13-39-04-e2e/e106_l3.752.pth"
+    autoencoder_model = "conditional_autoencoder_model/ivcvscans-2025-10-13-14-25-08/e97_l0.269.pth"
+    mlp_model = "env_to_latent_model/ivcvscans-2025-10-13-14-38-28-e2e/e86_l3.081.pth"
     
     analysis_var = 'temp'  # 'temp' or 'humi'
     path, sensor_name = fake_sensor(autoencoder_model, mlp_model, is_conditional=True, analysis_var=analysis_var)

@@ -297,18 +297,19 @@ def conditional_aggregate_train():
     
     for epoch in range(config['num_epochs']):
         epoch_loss = 0
-        
-        for temp, date, iv_curve, humi, ramp_type, dura, seq_len, bd_v, sensor_num, sensor_name in tqdm(train_loader):
+
+        for temp, date, iv_curve, humi, ramp_type, dura, seq_len, bd_v, sensor_num, sensor_name, sensor_thickness, sensor_type in tqdm(train_loader):
             # Prepare inputs - handle inf values for parameters using tensor operations
             # Replace inf values with appropriate defaults
             humi = torch.where(torch.isinf(humi), torch.tensor(0.0), humi)
             dura = torch.where(torch.isinf(dura), torch.tensor(0.0), dura)  
             ramp_type = torch.where(torch.isinf(ramp_type), torch.tensor(0.0), ramp_type)
             temp = torch.where(torch.isinf(temp), torch.tensor(25.0), temp)
+            sensor_thickness = torch.where(torch.isinf(sensor_thickness), torch.tensor(0.0), sensor_thickness)
             
             i_curve = iv_curve[:,[1],:].to(device)  # Only current channel
-            params = torch.stack([temp, date, humi, ramp_type, dura, sensor_num], dim=1).float().to(device)
-            
+            # params = torch.stack([temp, date, humi, ramp_type, dura, sensor_num], dim=1).float().to(device)
+            params = torch.stack([temp, humi, ramp_type, sensor_num, sensor_thickness, sensor_type], dim=1).float().to(device)
             # Debug: Check input parameters for NaN/inf
             if torch.isnan(params).any() or torch.isinf(params).any():
                 print(f"WARNING: NaN/inf in input parameters after cleaning")
@@ -371,14 +372,16 @@ def conditional_aggregate_run(model_path: str):
     with torch.no_grad():
         for i, idx in enumerate(idxs):
             # sample, seq_len, params = dataset[idx]
-            temp, date, iv_curve, humi, ramp_type, dura, seq_len, bd_v, sensor_num, sensor_name = dataset[idx]
+            temp, date, iv_curve, humi, ramp_type, dura, seq_len, bd_v, sensor_num, sensor_name, sensor_thickness, sensor_type = dataset[idx]
             # prepare params
             sample = iv_curve
+            if sensor_thickness == float('inf'): sensor_thickness = 0.0
             if humi == float('inf'): humi = 0.0
             if dura == float('inf'): dura = 0.0
             if ramp_type == float('inf'): ramp_type = 0.0
             if temp == float('inf'): temp = 25.0
-            params = torch.tensor([temp, date, humi, ramp_type, dura, sensor_num])
+            # params = torch.tensor([temp, date, humi, ramp_type, dura, sensor_num])
+            params = torch.tensor([temp, humi, ramp_type, sensor_num, sensor_thickness, sensor_type])
             
             sample = sample.unsqueeze(0).to(device) # add batch dim
             params = params.unsqueeze(0).float().to(device)
@@ -418,4 +421,4 @@ if __name__ == '__main__':
     # aggregate_train()
     # aggregate_run("autoencoder_model/ivcvscans-2025-08-12-01:59:55/e97_l21.182.pth")
     # conditional_aggregate_train()
-    conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2025-10-13-13-07-15/e98_l0.244.pth")
+    conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2025-10-13-14-25-08/e97_l0.269.pth")
