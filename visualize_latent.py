@@ -223,7 +223,7 @@ def explain_latent_corr(model_path: str):
     model_path : str
         The relative path to autoencoder model.
     """
-    dataset = AggregateLatentDataset(DATABASE_DIR, model_path)
+    dataset = AggregateLatentDataset(DATABASE_DIR, model_path, data_config_path="./ml_data_config.txt")
 
     selected_metrics = [0, 1, 3, 4, 5, 8]
     X = [torch.tensor([dataset[i][j] for j in selected_metrics]) for i in range(len(dataset))]  # metrics
@@ -251,7 +251,7 @@ def explain_latent_corr(model_path: str):
     plt.savefig(model_path.replace(".pth", f"corr.png"))
 
 
-def compare_mlp_vs_ground_truth_latent(autoencoder_model_path: str, mlp_model_path: str):
+def compare_mlp_vs_ground_truth_latent(autoencoder_model_path: str, mlp_model_path: str, is_conditional: bool=False):
     """
     Compare MLP-predicted latent vectors with ground truth latent vectors from autoencoder.
     Generate plots showing both predicted and ground truth latents overlaid and annotated by environmental variables.
@@ -262,7 +262,9 @@ def compare_mlp_vs_ground_truth_latent(autoencoder_model_path: str, mlp_model_pa
         The relative path to the autoencoder model that generates ground truth latents.
     mlp_model_path : str
         The relative path to the MLP model that predicts latents from environmental variables.
-    
+    is_conditional : bool, optional
+        Whether the MLP model is conditional. Defaults to False.
+
     Notes
     -----
     Creates scatter plots overlaying MLP predictions over ground truth for different latent dimensions,
@@ -279,7 +281,7 @@ def compare_mlp_vs_ground_truth_latent(autoencoder_model_path: str, mlp_model_pa
 
     # Load the latent dataset (contains ground truth latents from autoencoder)
     from model import EnvToLatent
-    dataset = AggregateLatentDataset(DATABASE_DIR, autoencoder_model_path)
+    dataset = AggregateLatentDataset(DATABASE_DIR, autoencoder_model_path, is_conditional=is_conditional, data_config_path="./ml_data_config.txt")
     
     # Load MLP model
     mlp_model = EnvToLatent().to(device)
@@ -429,8 +431,22 @@ def compare_mlp_vs_ground_truth_latent(autoencoder_model_path: str, mlp_model_pa
 
 
 if __name__ == '__main__':
-    model_path = "autoencoder_model/ivcvscans-2025-08-12-03-24-52/e125_l15.918.pth"
-    mlp_path = "env_to_latent_model/ivcvscans-2025-08-12-14-10-45/e133_l0.178.pth"
-    # plot_latent(model_path)
-    # explain_latent_corr(model_path)
-    compare_mlp_vs_ground_truth_latent(model_path, mlp_path)
+    # model_path = "autoencoder_model/ivcvscans-2025-08-12-03-24-52/e125_l15.918.pth"
+    # mlp_path = "env_to_latent_model/ivcvscans-2025-08-12-14-10-45/e133_l0.178.pth"
+    # mlp_path = "env_to_latent_model/ivcvscans-2025-10-13-08-52-22-e2e/e82_l1.162.pth"
+    # mlp_path = "env_to_latent_model/ivcvscans-2025-10-13-09-09-32-e2e/e81_l2.403.pth"
+    
+    # model_path = "conditional_autoencoder_model/ivcvscans-2025-10-13-09-31-32/e105_l0.300.pth"
+    # mlp_path = "env_to_latent_model/ivcvscans-2025-10-13-09-59-07-e2e/e63_l4.837.pth"
+
+    # model_path = "conditional_autoencoder_model/ivcvscans-2025-10-13-10-37-16/e93_l13.541.pth"
+    # mlp_path = "env_to_latent_model/ivcvscans-2025-10-13-11-05-23-e2e/e81_l2.623.pth"
+    
+    
+    # model_path = "conditional_autoencoder_model/ivcvscans-2025-10-13-11-59-29/e108_l0.332.pth"
+    # mlp_path = "env_to_latent_model/ivcvscans-2025-10-13-12-08-01-e2e/e60_l3.557.pth"
+    
+    model_path = "conditional_autoencoder_model/ivcvscans-2025-10-13-13-07-15/e98_l0.244.pth"
+    mlp_path = "env_to_latent_model/ivcvscans-2025-10-13-13-39-04-e2e/e106_l3.752.pth"
+    
+    compare_mlp_vs_ground_truth_latent(model_path, mlp_path, is_conditional=True)

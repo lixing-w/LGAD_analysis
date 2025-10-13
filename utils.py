@@ -274,7 +274,7 @@ def disable_top_and_right_bounds(plt):
     ax.spines['right'].set_visible(False)
     return 
     
-def load_data_config(DATABASE_DIR: str, sensors: list[Sensor]):
+def load_data_config(DATABASE_DIR: str, sensors: list[Sensor], config_path: str=None):
     """
     Loads scans that we ignore.
     
@@ -310,12 +310,14 @@ def load_data_config(DATABASE_DIR: str, sensors: list[Sensor]):
     name_to_sensor = dict()
     for sensor in sensors:
         name_to_sensor[sensor.name] = sensor
-        
-    if not os.path.exists(os.path.join(DATABASE_DIR, "data_config.txt")):
-        with open(os.path.join(DATABASE_DIR, "data_config.txt"), "w") as f:
-            return 
-        
-    with open(os.path.join(DATABASE_DIR, "data_config.txt"), "r") as f:
+    
+    if config_path is None:
+        config_path = os.path.join(DATABASE_DIR, "data_config.txt")
+        if not os.path.exists(config_path):
+            with open(config_path, "w") as f:
+                return
+
+    with open(config_path, "r") as f:
         lines = f.readlines()
         for i in range(len(lines)):
             line = lines[i]
@@ -459,18 +461,41 @@ def write_sensor_config(path: str, sensors: list[Sensor]):
                     f.write(f"{temp:.1f},{volt:.3f},{humi:.3f}|")
             f.write(" \n")
                 
-def load_sensor_config(path: str, sensors: list[Sensor], load_iv=True, load_cv=True):
+def load_sensor_config(path: str, sensors: list[Sensor], load_iv=True, load_cv=True, config_path: str=None):
     """
     Set up sensor using path/sensor_config.txt.
+    
+    Parameters
+    ----------
+    path : str
+        The directory containing sensor_config.txt.
+    sensors : list[Sensor]
+        A list of sensors to which the config will load. This list is usually 
+        the one returned by list_sensors().
+    load_iv : bool
+        Whether to load IV scan data.
+    load_cv : bool
+        Whether to load CV scan data.
+    config_path : str, optional
+        The path to the config file. If None, defaults to path/sensor_config.txt.
+        If the file does not exist, it will be created as an empty file.
+        Default is None.
+    -----------
+    Returns
+    -------
+    None
+    -----------
+    Modifies the sensors in place.
     """
     name_to_sensor = dict()
     for sensor in sensors:
         name_to_sensor[sensor.name] = sensor
     
-    config_path = os.path.join(path, "sensor_config.txt")
-    if not os.path.exists(config_path): # if config file DNE, create
-        with open(config_path, "w") as f:
-            return 
+    if config_path is None:
+        config_path = os.path.join(path, "sensor_config.txt")
+        if not os.path.exists(config_path): # if config file DNE, create
+            with open(config_path, "w") as f:
+                return 
         
     with open(config_path, "r") as f:
         lines = f.readlines()

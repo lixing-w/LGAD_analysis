@@ -102,7 +102,7 @@ class AggregateIVDatasetForAutoEncoder(Dataset):
     """ A database consisting of all IV scans from DATABASE_DIR """
 
     # contains ALL IV scans from DATABASE_DIR, regardless what sensor they belong to
-    def __init__(self, database_dir: str, mode: str = "compact"):
+    def __init__(self, database_dir: str, mode: str = "compact", sensor_config_path: str=None, data_config_path: str=None):
         """
         Initializes a database consisting of all IV scans from DATABASE_DIR.
         
@@ -120,8 +120,8 @@ class AggregateIVDatasetForAutoEncoder(Dataset):
         assert mode in {"compact", "full"}
         self.mode = mode
         self.sensors = list_sensors()
-        load_sensor_config(database_dir, self.sensors)
-        load_data_config(database_dir, self.sensors)
+        load_sensor_config(database_dir, self.sensors, config_path=sensor_config_path)
+        load_data_config(database_dir, self.sensors, config_path=data_config_path)
         # every sensor is associated with a unique number for identification
         self.sensor_name_to_number = dict()
         self.sensor_number_to_name = dict()
@@ -173,14 +173,17 @@ class AggregateIVDatasetForAutoEncoder(Dataset):
             ys_log10 = ys_log10[~nan_mask]
             assert not np.any(nan_mask), f"{np.sum(nan_mask)}, {nan_mask.shape}"
 
-            # estimate the breakdown pt 
-            if mode == "full":
-                lines, std = find_breakdown(xs, ys_log10, start_idx=30, bd_thresh=0.5, plot=False)
-                slope, offset, bd_v = lines[0]
-                c_at_100v = slope * 100 + offset
-            else:
-                slope, offset, bd_v = None, None, None
-                c_at_100v = None
+            # # estimate the breakdown pt 
+            # if mode == "full":
+            #     lines, std = find_breakdown(xs, ys_log10, start_idx=30, bd_thresh=0.5, plot=False)
+            #     slope, offset, bd_v = lines[0]
+            #     c_at_100v = slope * 100 + offset
+            # else:
+            #     slope, offset, bd_v = None, None, None
+            #     c_at_100v = None
+            
+            # we don't need it for conditional autoencoder right now, so skip it to save time
+            slope, offset, bd_v, c_at_100v = -1, -1, -1, -1
 
             # pytorch expects (B, Channel, Seq_len)
             data = np.stack([xs, ys_log10], axis=0)
@@ -232,7 +235,7 @@ class AggregateLatentDataset(AggregateIVDatasetForAutoEncoder):
     """ A database consisting of all IV scans from DATABASE_DIR """
 
     # contains ALL IV scans from DATABASE_DIR, regardless what sensor they belong to
-    def __init__(self, database_dir: str, model_path: str):
+    def __init__(self, database_dir: str, model_path: str, is_conditional: bool = False, sensor_config_path: str=None, data_config_path: str=None):
         """
         Initializes a database consisting of all IV scans from DATABASE_DIR.
         
@@ -243,7 +246,7 @@ class AggregateLatentDataset(AggregateIVDatasetForAutoEncoder):
         model_path : str
             The relative path to the autoencoder that generates latents.
         """
-        super().__init__(database_dir, mode="full")
+        super().__init__(database_dir, mode="full", sensor_config_path=sensor_config_path, data_config_path=data_config_path)
 
         # initialize autoencoder 
         if torch.cuda.is_available():
@@ -254,7 +257,10 @@ class AggregateLatentDataset(AggregateIVDatasetForAutoEncoder):
             device = torch.device("cpu")
 
         print(f"Using device: {device}")
-        model = load_model_from_pth(model_path, "Encoder", self.max_seq_len, device=device)
+        if not is_conditional:
+            model = load_model_from_pth(model_path, "Encoder", self.max_seq_len, device=device)
+        else:
+            model = load_model_from_pth(model_path, "ConditionalEncoder", self.max_seq_len, device=device)
         model.eval()
 
         for d in self.data:  # compute latent, then append to d

@@ -1,0 +1,39 @@
+# curate bad files
+DR N:AC_W3096 T:~-20 # ignore unstable measurements whose temp is low
+DR N:AC_W3096 R:test_ # ignore tests
+DR N:BNL_LGAD_W3058 R:RoomTemp # ignore tests
+DR N:BNL_LGAD_W3045 R:RoomTemp # ignore tests
+DR N:BNL_LGAD_W3058 T:~-40 RT:-1 D:27/10/2023
+DR N:BNL_LGAD_W3058 T:-60 D:27/10/2023
+DR N:BNL_LGAD_W3058 T:-40 RT:-1 D:26/10/2023
+DR N:BNL_LGAD_W3058 T:-20 RT:-1 D:27/10/2023 # something went wrong in low volts
+DR N:BNL_LGAD_W3058 T:-60 D:26/10/2023
+DR N:BNL_LGAD_W3058 T:~-40 RT:-1 D:25/10/2023
+DR N:BNL_LGAD_W3058 T:~-40 D:30/10/2023
+DR N:BNL_LGAD_W3058 D:30/10/2023 T:-20 RT:-1
+
+# ignore not sensors interested
+DR N:BNL-AC-LGAD-STRIP_GD R:.iv
+DR N:BNL_ACLGAD_HEX31 R:.iv
+DR N:BNL_ACLGAD_PIX19 R:.iv
+DR N:BNL_ACLGAD_PIX33 R:.iv
+DR N:BNL_ACLGAD_STRIP25 R:.iv
+DR N:BNL_ACLGAD_STRIP26 R:.iv
+DR N:D5 R:.iv
+DR N:D9 R:.iv
+DR N:HPK_LGAD_1.2_6 R:.iv
+DR N:HPK_LGAD_1.2_GD R:.iv
+DR N:HPK_LGAD_1_2_1 R:.iv
+DR N:HPK_LGAD_1_2_2 R:.iv
+DR N:HPK_LGAD_1_2_3 R:.iv
+DR N:HPK_LGAD_1_2_4 R:.iv
+DR N:HPK_LGAD_1_2_5 R:.iv
+DR N:HPK_LGAD_3.1_1 R:.iv
+DR N:HPK_LGAD_3.1_2 R:.iv
+DR N:HPK_LGAD_3.1_7 R:.iv
+DR N:HPK_LGAD_3.1_8 R:.iv
+DR N:HPK_LGAD_3_1_4 R:.iv
+DR N:HPK_LGAD_3_1_3 R:.iv
+DR N:HPK_LGAD_3_1_5 R:.iv
+DR N:HPK_LGAD_3_1_6 R:.iv
+

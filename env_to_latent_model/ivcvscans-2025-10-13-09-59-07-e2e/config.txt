@@ -1,0 +1,3 @@
+reconstruction_weight: 2.0
+latent_weight: 1.0
+autoencoder_model: conditional_autoencoder_model/ivcvscans-2025-10-13-09-31-32/e105_l0.300.pth
