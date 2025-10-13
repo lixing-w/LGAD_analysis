@@ -225,7 +225,7 @@ class AggregateIVDatasetForAutoEncoder(Dataset):
             if duration is None: duration = float('inf')
             if ramp_type == 0: ramp_type = float('inf')
             if temperature is None: temperature = float('inf')
-            return temperature, date, iv_seq, humi, ramp_type, duration, seq_len, bd_v, i_at_100v, slope, offset, sensor_number, sensor_name
+            return temperature, date, iv_seq, humi, ramp_type, duration, seq_len, bd_v, sensor_number, sensor_name
 
 
 class AggregateLatentDataset(AggregateIVDatasetForAutoEncoder):

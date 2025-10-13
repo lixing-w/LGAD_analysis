@@ -57,7 +57,7 @@ def train(autoencoder_model_path: str):
     
     print(f"Using device: {device}")
     dataset = AggregateLatentDataset(DATABASE_DIR, autoencoder_model_path)
-    train_loader = DataLoader(dataset, batch_size=config['batch_size'], shuffle=True, num_workers=config['batch_size'], persistent_workers=True)
+    train_loader = DataLoader(dataset, batch_size=1, shuffle=True)
     
     # initialize model 
     model = EnvToLatent().to(device)
@@ -149,8 +149,11 @@ def explain(model_path: str, autoencoder_model_path: str):
     plt.tight_layout()
     plt.show()
     
+    
+
+
 if __name__ == "__main__":
     # train("autoencoder_model/ivcvscans-2025-07-30-06-51-58/e97_l12.517.pth")
     # explain("env_to_latent_model/ivcvscans-2025-08-12-02-23-15/e133_l0.124.pth", 
     #         "autoencoder_model/ivcvscans-2025-08-12-01:59:55/e97_l21.182.pth")
-    train("autoencoder_model/ivcvscans-2025-08-13-15-56-15/e102_l2.580.pth")
+    train("autoencoder_model/ivcvscans-2025-08-12-03:24:52/e125_l15.918.pth")

@@ -251,18 +251,186 @@ def explain_latent_corr(model_path: str):
     plt.savefig(model_path.replace(".pth", f"corr.png"))
 
 
+def compare_mlp_vs_ground_truth_latent(autoencoder_model_path: str, mlp_model_path: str):
+    """
+    Compare MLP-predicted latent vectors with ground truth latent vectors from autoencoder.
+    Generate plots showing both predicted and ground truth latents overlaid and annotated by environmental variables.
+    
+    Parameters
+    ----------
+    autoencoder_model_path : str
+        The relative path to the autoencoder model that generates ground truth latents.
+    mlp_model_path : str
+        The relative path to the MLP model that predicts latents from environmental variables.
+    
+    Notes
+    -----
+    Creates scatter plots overlaying MLP predictions over ground truth for different latent dimensions,
+    colored by environmental variables. Plots are saved to the MLP model's directory.
+    """
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+
+    print(f"Using device: {device}")
+
+    # Load the latent dataset (contains ground truth latents from autoencoder)
+    from model import EnvToLatent
+    dataset = AggregateLatentDataset(DATABASE_DIR, autoencoder_model_path)
+    
+    # Load MLP model
+    mlp_model = EnvToLatent().to(device)
+    mlp_model.load_state_dict(torch.load(mlp_model_path, map_location=device))
+    mlp_model.eval()
+    
+    # Collect data
+    all_gt_latent = []  # ground truth latents
+    all_pred_latent = []  # MLP predicted latents
+    all_temp = []
+    all_humi = []
+    all_date = []
+    all_ramp = []
+    all_dura = []
+    all_sensor_num = []
+    
+    with torch.no_grad():
+        for temp, date, iv_seq, humi, ramp_type, dura, seq_len, bd_v, sensor_num, sensor_name, gt_latent in dataset:
+            # Ground truth latent (from autoencoder)
+            all_gt_latent.append(gt_latent.squeeze())
+            
+            # Predict latent using MLP
+            metrics = torch.tensor([temp, date, humi, ramp_type, dura, sensor_num]).float().to(device).unsqueeze(0)
+            pred_latent = mlp_model(metrics)
+            all_pred_latent.append(pred_latent.cpu().squeeze())
+            
+            # Environmental variables
+            all_temp.append(temp if temp is not None else float('nan'))
+            all_humi.append(humi if humi is not None else float('nan'))
+            all_dura.append(dura if dura is not None else float('nan'))
+            all_date.append(date if date is not None else float('nan'))
+            all_ramp.append(ramp_type if ramp_type is not None else float('nan'))
+            all_sensor_num.append(sensor_num)
+
+    all_gt_latent = np.array(all_gt_latent)
+    all_pred_latent = np.array(all_pred_latent)
+    
+    print(f"Comparing {all_gt_latent.shape[0]} latents of {all_gt_latent.shape[1]} dimensions.")
+    print(f"Ground truth latent shape: {all_gt_latent.shape}")
+    print(f"Predicted latent shape: {all_pred_latent.shape}")
+
+    params = ["Temperature (C)", "Humidity (%)", "Ramp Type", "Duration (s)", "Date", "Sensor Number"]
+    value_lsts = [all_temp, all_humi, all_ramp, all_dura, all_date, all_sensor_num]
+    value_lsts = [np.array(lst) for lst in value_lsts]
+
+    # Create output directory
+    import os
+    mlp_dir = os.path.dirname(mlp_model_path)
+    
+    # Plot different latent dimensions
+    dim_pairs = [(0, 6), (1, 7), (2, 8), (3, 9)]  # Compare different dimension pairs
+    
+    for dim_1, dim_2 in dim_pairs:
+        fig_idx = 0
+        for param, value_lst in zip(params, value_lsts):
+            plt.figure(figsize=(14, 10))
+            
+            if param == "Ramp Type":
+                ramp_map = {-1: "Down", 0: "NA", 1: "Up"}
+                for ramp_type in np.unique(value_lst):
+                    mask = (value_lst == ramp_type)
+                    # Plot ground truth with circles and lower alpha
+                    plt.scatter(all_gt_latent[mask][:, dim_1], all_gt_latent[mask][:, dim_2], 
+                              label=f"GT {ramp_map[ramp_type]}", alpha=0.6, s=60, marker='o', edgecolors='black', linewidth=0.5)
+                    # Plot predictions with X markers and higher alpha
+                    plt.scatter(all_pred_latent[mask][:, dim_1], all_pred_latent[mask][:, dim_2], 
+                              label=f"Pred {ramp_map[ramp_type]}", alpha=0.9, s=40, marker='x', linewidth=2)
+                plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
+            elif param == "Date":
+                labels = [datetime.fromordinal(int(dataset.z_score_to_date_ordinal(d))).strftime("%Y-%m-%d") for d in value_lst]
+                uniq_dates = sorted(set(labels))
+                label_to_int = {l: i for i, l in enumerate(uniq_dates)}
+                numeric_vals = [label_to_int[l] for l in labels]
+                
+                # Plot ground truth with circles
+                sc1 = plt.scatter(all_gt_latent[:, dim_1], all_gt_latent[:, dim_2], c=numeric_vals, 
+                                cmap="viridis", alpha=0.6, s=60, marker='o', edgecolors='black', linewidth=0.5, label="Ground Truth")
+                # Plot predictions with X markers
+                sc2 = plt.scatter(all_pred_latent[:, dim_1], all_pred_latent[:, dim_2], c=numeric_vals, 
+                                cmap="viridis", alpha=0.9, s=40, marker='x', linewidth=2, label="MLP Prediction")
+                
+                cbar = plt.colorbar(sc1, ticks=range(len(uniq_dates)))
+                cbar.ax.set_yticklabels(uniq_dates)
+                cbar.set_label(param)
+                plt.legend()
+
+            elif param == "Sensor Number":
+                for sensor_num in np.unique(value_lst):
+                    mask = (value_lst == sensor_num)
+                    sensor_name = dataset.sensor_number_to_name[sensor_num]
+                    # Plot ground truth with circles
+                    plt.scatter(all_gt_latent[mask][:, dim_1], all_gt_latent[mask][:, dim_2],
+                              label=f"GT {sensor_name}", alpha=0.6, s=60, marker='o', edgecolors='black', linewidth=0.5)
+                    # Plot predictions with X markers
+                    plt.scatter(all_pred_latent[mask][:, dim_1], all_pred_latent[mask][:, dim_2],
+                              label=f"Pred {sensor_name}", alpha=0.9, s=40, marker='x', linewidth=2)
+                plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
+            else:  # continuous variables
+                # Plot ground truth with circles
+                sc1 = plt.scatter(all_gt_latent[:, dim_1], all_gt_latent[:, dim_2], c=value_lst, 
+                                cmap="rainbow", alpha=0.6, s=60, marker='o', edgecolors='black', linewidth=0.5, label="Ground Truth")
+                # Plot predictions with X markers
+                sc2 = plt.scatter(all_pred_latent[:, dim_1], all_pred_latent[:, dim_2], c=value_lst, 
+                                cmap="rainbow", alpha=0.9, s=40, marker='x', linewidth=2, label="MLP Prediction")
+                
+                plt.colorbar(sc1, label=param)
+                plt.legend()
+
+            plt.title(f"Ground Truth vs MLP Predicted Latent Space\nDim {dim_2} vs {dim_1} (Colored by {param})")
+            plt.xlabel(f"Latent Dim {dim_1}")
+            plt.ylabel(f"Latent Dim {dim_2}")
+            
+            plt.tight_layout()
+            save_path = os.path.join(mlp_dir, f"overlay_comparison_dim{dim_2}_{dim_1}_{param.replace(' ', '_').replace('(', '').replace(')', '')}.png")
+            plt.savefig(save_path, dpi=150, bbox_inches='tight')
+            plt.show()
+            plt.close()
+            fig_idx += 1
+    
+    # Also create correlation plots between GT and predicted latents
+    plt.figure(figsize=(15, 10))
+    for i in range(min(18, all_gt_latent.shape[1])):  # Plot first 18 dimensions or all if fewer
+        plt.subplot(3, 6, i+1)
+        plt.scatter(all_gt_latent[:, i], all_pred_latent[:, i], alpha=0.6, s=20)
+        
+        # Add diagonal line for perfect prediction
+        min_val = min(all_gt_latent[:, i].min(), all_pred_latent[:, i].min())
+        max_val = max(all_gt_latent[:, i].max(), all_pred_latent[:, i].max())
+        plt.plot([min_val, max_val], [min_val, max_val], 'r--', alpha=0.8, linewidth=1)
+        
+        # Calculate correlation
+        corr_coef = np.corrcoef(all_gt_latent[:, i], all_pred_latent[:, i])[0, 1]
+        plt.title(f"Dim {i}\nr={corr_coef:.3f}")
+        plt.xlabel("Ground Truth")
+        plt.ylabel("MLP Predicted")
+        
+    plt.suptitle("Ground Truth vs MLP Predicted Latents\n(Red line = perfect prediction)", fontsize=14)
+    plt.tight_layout()
+    save_path = os.path.join(mlp_dir, "gt_vs_pred_correlation.png")
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.show()
+    plt.close()
+    
+    print(f"Comparison plots saved to: {mlp_dir}")
+
+
 if __name__ == '__main__':
     model_path = "autoencoder_model/ivcvscans-2025-08-12-03-24-52/e125_l15.918.pth"
-    # plot_latent(model_path)
-    explain_latent_corr(model_path)
-    # explain_latent_on_data(model_path)
-    #
-    # model_path = "autoencoder_model/ivcvscans-2025-08-12-21-21-55/e112_l21.576.pth"  # without attention
+    mlp_path = "env_to_latent_model/ivcvscans-2025-08-12-14-10-45/e133_l0.178.pth"
     # plot_latent(model_path)
     # explain_latent_corr(model_path)
-    # explain_latent_on_data(model_path)
-    #
-    # model_path = "autoencoder_model/ivcvscans-2025-08-13-01-24-08/e102_l6.585.pth"  # with attention
-    # plot_latent(model_path)
-    # explain_latent_corr(model_path)
-    # explain_latent_on_data(model_path)
+    compare_mlp_vs_ground_truth_latent(model_path, mlp_path)
