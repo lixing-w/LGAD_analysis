@@ -74,8 +74,8 @@ def predict_curve(autoencoder_model: str, mlp_path: str, temp=None, humi=None, r
     if sensor_no is None: sensor_no = 0
 
     # metrics = torch.tensor([temp, normalized_date, humi, ramp_type, duration, sensor_no]).float().to(device)
-    # metrics = torch.tensor([temp, humi, ramp_type, sensor_no, dataset.sensor_number_to_thickness.get(sensor_no, 0.0), dataset.sensor_number_to_type.get(sensor_no, 0)]).float().to(device)
-    metrics = torch.tensor([temp, humi, ramp_type, sensor_no, 50, dataset.sensor_number_to_type.get(sensor_no, 0)]).float().to(device)
+    metrics = torch.tensor([temp, humi, ramp_type, sensor_no, dataset.sensor_number_to_thickness.get(sensor_no, 0.0), dataset.sensor_number_to_type.get(sensor_no, 0)]).float().to(device)
+    # metrics = torch.tensor([temp, humi, ramp_type, sensor_no, 50, dataset.sensor_number_to_type.get(sensor_no, 0)]).float().to(device)
     p_latent = mlp_model(metrics)
     p_latent = p_latent.unsqueeze(0)
     if is_conditional:
@@ -121,9 +121,9 @@ def fake_sensor(autoencoder_model: str, mlp_path: str, is_conditional: bool=Fals
         os.mkdir(os.path.join(path, sensor_name))
 
     params_list = []  # add env vars for prediction!
-    sensor_no = 0
+    sensor_no = 9
     if analysis_var == 'temp':
-        for temp in range(-20, 130, 10):
+        for temp in range(-120, 180, 10):
             humi = 10 # fix humidity for now
             params_list.append([temp, humi, 0, dataset.date_to_z_score(datetime(2024, 12, 6)), 0, sensor_no])
     elif analysis_var == 'humi':
