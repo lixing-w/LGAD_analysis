@@ -147,7 +147,7 @@ def explain_latent_corr(model_path: str):
     plt.savefig(model_path.replace(".pth", f"corr.png"))
 
 
-def compare_mlp_vs_ground_truth_latent(autoencoder_model_path: str, mlp_model_path: str, is_conditional: bool=False):
+def compare_mlp_vs_ground_truth_latent(autoencoder_model_path: str, mlp_model_path: str, latent_dim: int, is_conditional: bool=False):
     """
     Compare MLP-predicted latent vectors with ground truth latent vectors from autoencoder.
     Generate plots showing both predicted and ground truth latents overlaid and annotated by environmental variables.
@@ -230,7 +230,8 @@ def compare_mlp_vs_ground_truth_latent(autoencoder_model_path: str, mlp_model_pa
     
     # Plot different latent dimensions
     dim_pairs = [(0, 6), (1, 7), (2, 8), (3, 9)]  # Compare different dimension pairs
-    
+    if latent_dim <= 4:
+        dim_pairs = [(0, 1), (0, 2), (1, 2), (0, 3)]
     for dim_1, dim_2 in dim_pairs:
         fig_idx = 0
         for param, value_lst in zip(params, value_lsts):
@@ -339,7 +340,13 @@ if __name__ == '__main__':
     # model_path = "conditional_autoencoder_model/ivcvscans-2025-10-13-11-59-29/e108_l0.332.pth"
     # mlp_path = "env_to_latent_model/ivcvscans-2025-10-13-12-08-01-e2e/e60_l3.557.pth"
     
-    model_path = "conditional_autoencoder_model/ivcvscans-2025-10-13-14-25-08/e97_l0.269.pth"
-    mlp_path = "env_to_latent_model/ivcvscans-2025-10-13-14-38-28-e2e/e86_l3.081.pth"
+    # model_path = "conditional_autoencoder_model/ivcvscans-2025-10-13-14-25-08/e97_l0.269.pth" # latent 16 + params 6
+    # mlp_path = "env_to_latent_model/ivcvscans-2025-10-13-14-38-28-e2e/e86_l3.081.pth"
     
-    compare_mlp_vs_ground_truth_latent(model_path, mlp_path, is_conditional=True)
+    # model_path = "conditional_autoencoder_model/ivcvscans-2025-10-28-10-30-59/e95_l0.211.pth" # latent 8 + params 6
+    # mlp_path = "env_to_latent_model/ivcvscans-2025-10-28-10-43-53-e2e/e108_l4.887.pth"
+    
+    model_path = "conditional_autoencoder_model/ivcvscans-2025-10-28-11-02-38/e97_l0.305.pth" # latent 4 + params 6
+    mlp_path = "env_to_latent_model/ivcvscans-2025-10-28-11-15-26-e2e/e120_l6.899.pth"
+
+    compare_mlp_vs_ground_truth_latent(model_path, mlp_path, latent_dim=4, is_conditional=True)

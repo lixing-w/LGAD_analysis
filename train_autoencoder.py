@@ -262,7 +262,7 @@ def conditional_aggregate_train():
     # back-up the train_autoencoder.py
     shutil.copy("./train_autoencoder.py", f"{train_dir}/train_autoencoder-{start_time.strftime('%Y-%m-%d-%H-%M-%S')}.py")
     config = {
-        'lr': 0.0005,        # Learning rate
+        'lr': 5e-4,        # Learning rate
         'batch_size': 1,    # Batch size
         'num_epochs': 100,   # Number of full passes over data
     }
@@ -421,4 +421,6 @@ if __name__ == '__main__':
     # aggregate_train()
     # aggregate_run("autoencoder_model/ivcvscans-2025-08-12-01:59:55/e97_l21.182.pth")
     # conditional_aggregate_train()
-    conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2025-10-13-14-25-08/e97_l0.269.pth")
+    # conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2025-10-13-14-25-08/e97_l0.269.pth") # latent 16 + params 6
+    # conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2025-10-28-10-30-59/e95_l0.211.pth") # latent 8 + params 6
+    conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2025-10-28-11-02-38/e97_l0.305.pth") # latent 4 + params 6

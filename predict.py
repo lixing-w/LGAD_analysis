@@ -127,7 +127,7 @@ def fake_sensor(autoencoder_model: str, mlp_path: str, is_conditional: bool=Fals
             humi = 10 # fix humidity for now
             params_list.append([temp, humi, 0, dataset.date_to_z_score(datetime(2024, 12, 6)), 0, sensor_no])
     elif analysis_var == 'humi':
-        for humi in range(0, 40, 2):
+        for humi in range(0, 80, 2):
             temp = 20  # fix temp for now
             params_list.append([temp, humi, 0, dataset.date_to_z_score(datetime(2024, 12, 6)), 0, sensor_no])
     else:
@@ -174,8 +174,14 @@ if __name__ == "__main__":
     # autoencoder_model = "conditional_autoencoder_model/ivcvscans-2025-10-13-11-59-29/e108_l0.332.pth"
     # mlp_model = "env_to_latent_model/ivcvscans-2025-10-13-12-08-01-e2e/e60_l3.557.pth"
     
-    autoencoder_model = "conditional_autoencoder_model/ivcvscans-2025-10-13-14-25-08/e97_l0.269.pth"
-    mlp_model = "env_to_latent_model/ivcvscans-2025-10-13-14-38-28-e2e/e86_l3.081.pth"
+    # autoencoder_model = "conditional_autoencoder_model/ivcvscans-2025-10-13-14-25-08/e97_l0.269.pth" # latent 16 + params 6
+    # mlp_model = "env_to_latent_model/ivcvscans-2025-10-13-14-38-28-e2e/e86_l3.081.pth"
+    
+    # autoencoder_model = "conditional_autoencoder_model/ivcvscans-2025-10-28-10-30-59/e95_l0.211.pth" # latent 8 + params 6
+    # mlp_model = "env_to_latent_model/ivcvscans-2025-10-28-10-43-53-e2e/e108_l4.887.pth"
+    
+    autoencoder_model = "conditional_autoencoder_model/ivcvscans-2025-10-28-11-02-38/e97_l0.305.pth" # latent 4 + params 6
+    mlp_model = "env_to_latent_model/ivcvscans-2025-10-28-11-15-26-e2e/e120_l6.899.pth"
     
     analysis_var = 'temp'  # 'temp' or 'humi'
     path, sensor_name = fake_sensor(autoencoder_model, mlp_model, is_conditional=True, analysis_var=analysis_var)
