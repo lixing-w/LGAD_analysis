@@ -2,10 +2,12 @@ import shutil
 import random
 import os
 
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True' # workaround
+
 import torch 
 import torch.nn as nn
 import torch.optim as optim 
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
 from torch.utils.data import DataLoader 
 import matplotlib.pylab as plt
 import numpy as np
@@ -13,7 +15,7 @@ import numpy as np
 from tqdm import tqdm 
 from datetime import datetime
 
-from model import AutoEncoder, ConditionalAutoEncoder
+from model import AutoEncoder, ConditionalAutoEncoder, Supervised
 from dataset import AggregateIVDatasetForAutoEncoder
 from utils import Sensor, DATABASE_DIR, disable_top_and_right_bounds
 
@@ -86,7 +88,8 @@ def aggregate_train():
     config = {
         'lr': 0.0005,        # Learning rate
         'batch_size': 1,    # Single video per batch
-        'num_epochs': 300,   # Number of full passes over data
+        'num_epochs': 1000,   # Number of full passes over data
+        'l1_lambda': 1e-5,   # L1 weight decay lambda
     }
     
     if torch.cuda.is_available():
@@ -110,7 +113,7 @@ def aggregate_train():
     
     
     optimizer = optim.Adam(model.parameters(), lr=config['lr'])
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=5, min_lr=1e-8)
+    scheduler = CosineAnnealingLR(optimizer, T_max=config['num_epochs'])
     
     model.train() # set to training mode
     
@@ -128,6 +131,11 @@ def aggregate_train():
             recons, p_metrics = model(i_curve)
             # print(output.shape, iv_curve.shape)
             loss = criterion(recons, i_curve, seq_len, p_metrics, t_metrics, dataset.max_seq_len, device)
+            
+            # Add L1 weight decay
+            l1_penalty = sum(p.abs().sum() for p in model.parameters())
+            loss += config['l1_lambda'] * l1_penalty
+        
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
             optimizer.step()
@@ -135,7 +143,7 @@ def aggregate_train():
             epoch_loss += loss.item()
         
         avg_loss = epoch_loss / len(train_loader)
-        scheduler.step(avg_loss)
+        scheduler.step()
         if avg_loss < min_epoch_loss: # save model
             min_epoch_loss = avg_loss
             torch.save(model.state_dict(), f"{train_dir}/e{epoch}_l{avg_loss:.3f}.pth")
@@ -264,7 +272,8 @@ def conditional_aggregate_train():
     config = {
         'lr': 5e-4,        # Learning rate
         'batch_size': 1,    # Batch size
-        'num_epochs': 100,   # Number of full passes over data
+        'num_epochs': 10000,   # Number of full passes over data
+        'l1_lambda': 1e-5,   # L1 weight decay lambda
     }
     
     if torch.cuda.is_available():
@@ -280,7 +289,8 @@ def conditional_aggregate_train():
     train_loader = DataLoader(dataset, batch_size=config['batch_size'], shuffle=True)
     
     # initialize conditional autoencoder model 
-    model = ConditionalAutoEncoder(dataset.max_seq_len).to(device)
+    # model = ConditionalAutoEncoder(dataset.max_seq_len).to(device)
+    model = Supervised(dataset.max_seq_len).to(device)
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Total parameters: {total_params}")
@@ -289,7 +299,7 @@ def conditional_aggregate_train():
     print(f"Decoder input dimension: {model.decoder_input_dim}")
     
     optimizer = optim.Adam(model.parameters(), lr=config['lr'])
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=4, min_lr=1e-8)
+    scheduler = CosineAnnealingLR(optimizer, T_max=config['num_epochs'])
     
     model.train() # set to training mode
     
@@ -321,6 +331,11 @@ def conditional_aggregate_train():
             recons = model(i_curve, params)
             # Calculate reconstruction loss (no metrics loss for conditional autoencoder)
             loss = conditional_criterion(recons, i_curve, seq_len, dataset.max_seq_len, device)
+            
+            # Add L1 weight decay
+            l1_penalty = sum(p.abs().sum() for p in model.parameters())
+            loss += config['l1_lambda'] * l1_penalty
+                
             # loss = criterion(recons, i_curve, seq_len, p_params, params, dataset.max_seq_len, device)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2.0)
@@ -329,7 +344,7 @@ def conditional_aggregate_train():
             epoch_loss += loss.item()
         
         avg_loss = epoch_loss / len(train_loader)
-        scheduler.step(avg_loss)
+        scheduler.step()
         if avg_loss < min_epoch_loss: # save model
             min_epoch_loss = avg_loss
             torch.save(model.state_dict(), f"{train_dir}/e{epoch}_l{avg_loss:.3f}.pth")
@@ -361,7 +376,8 @@ def conditional_aggregate_run(model_path: str):
     
     dataset = AggregateIVDatasetForAutoEncoder(DATABASE_DIR, mode="full", data_config_path="./ml_data_config.txt")
     
-    model = ConditionalAutoEncoder(dataset.max_seq_len).to(device)
+    # model = ConditionalAutoEncoder(dataset.max_seq_len).to(device)
+    model = Supervised(dataset.max_seq_len).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
     
@@ -423,4 +439,10 @@ if __name__ == '__main__':
     # conditional_aggregate_train()
     # conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2025-10-13-14-25-08/e97_l0.269.pth") # latent 16 + params 6
     # conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2025-10-28-10-30-59/e95_l0.211.pth") # latent 8 + params 6
-    conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2025-10-28-11-02-38/e97_l0.305.pth") # latent 4 + params 6
+    # conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2025-10-28-11-02-38/e97_l0.305.pth") # latent 4 + params 6
+    
+    # weight decay
+    # conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2026-01-07-21-41-28/e999_l0.177.pth")
+    
+    # end-to-end
+    conditional_aggregate_run("conditional_autoencoder_model/ivcvscans-2026-01-08-11-23-54/e9999_l0.145.pth")

@@ -1,6 +1,8 @@
 import random
 import os
 
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True' # workaround
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -32,7 +34,7 @@ dataset = AggregateIVDatasetForAutoEncoder(DATABASE_DIR, data_config_path="./ml_
 
 
 def predict_curve(autoencoder_model: str, mlp_path: str, temp=None, humi=None, ramp_type=None, date=None, duration=None,
-                  sensor_no=None, plot=True, is_conditional=False):
+                  sensor_no=None, plot=True, is_conditional=False, is_supervised=False):
     """
     Parameters
     ----------
@@ -47,17 +49,22 @@ def predict_curve(autoencoder_model: str, mlp_path: str, temp=None, humi=None, r
         Datetime ordinal.
     duration : float, optional
     sensor_no : int, optional
+    is_supervised : bool, optional
+        Whether the model is supervised. Defaults to False.
     plot : bool, optional
         Whether show the predicted IV curve. Defaults to True.
     is_conditional : bool, optional
         Whether the MLP model is conditional. Defaults to False.
     """
     # initialize model
-    mlp_model = load_model_from_pth(mlp_path, "EnvToLatent", None, device=device)
-    mlp_model.eval()
+    if not is_supervised:
+        mlp_model = load_model_from_pth(mlp_path, "EnvToLatent", None, device=device)
+        mlp_model.eval()
 
     if is_conditional:
         decoder = load_model_from_pth(autoencoder_model, "ConditionalDecoder", 316, device=device)
+    elif is_supervised:
+        decoder = load_model_from_pth(autoencoder_model, "Supervised", 316, device=device)
     else:
         decoder = load_model_from_pth(autoencoder_model, "Decoder", 316, device=device)
     decoder.eval()
@@ -76,8 +83,11 @@ def predict_curve(autoencoder_model: str, mlp_path: str, temp=None, humi=None, r
     # metrics = torch.tensor([temp, normalized_date, humi, ramp_type, duration, sensor_no]).float().to(device)
     metrics = torch.tensor([temp, humi, ramp_type, sensor_no, dataset.sensor_number_to_thickness.get(sensor_no, 0.0), dataset.sensor_number_to_type.get(sensor_no, 0)]).float().to(device)
     # metrics = torch.tensor([temp, humi, ramp_type, sensor_no, 50, dataset.sensor_number_to_type.get(sensor_no, 0)]).float().to(device)
-    p_latent = mlp_model(metrics)
-    p_latent = p_latent.unsqueeze(0)
+    if is_supervised:
+        p_latent = metrics.unsqueeze(0)
+    else:
+        p_latent = mlp_model(metrics)
+        p_latent = p_latent.unsqueeze(0)
     if is_conditional:
         p_curve = decoder(p_latent, metrics.unsqueeze(0))
     else:
@@ -86,7 +96,12 @@ def predict_curve(autoencoder_model: str, mlp_path: str, temp=None, humi=None, r
     mask = sigmoid(p_curve[:, 1, :])
     mask = mask.squeeze().cpu().detach().numpy()
     mask[:30] = 1
-    valid_seq_len = np.where(mask < 0.1)[0][0]
+    valid_seq_len = np.where(mask < 0.1)[0]
+    # handles case where valid_seq_len is empty
+    if len(valid_seq_len) == 0:
+        valid_seq_len = p_curve.shape[2]
+    else:
+        valid_seq_len = valid_seq_len[0]
     p_curve = p_curve[:, 0, :valid_seq_len]
     p_curve = p_curve.squeeze().cpu().detach().numpy()
     volt_grid = torch.arange(0, valid_seq_len, 1).detach().numpy()
@@ -109,13 +124,16 @@ def predict_curve(autoencoder_model: str, mlp_path: str, temp=None, humi=None, r
     return volt_grid, p_curve, denoised
 
 
-def fake_sensor(autoencoder_model: str, mlp_path: str, is_conditional: bool=False, analysis_var='temp'):
+def fake_sensor(autoencoder_model: str, mlp_path: str, is_conditional: bool=False, is_supervised: bool=False, analysis_var='temp'):
     # make fake IV scans based on given models
     path = "./fake_sensors"
     if not os.path.exists(path):
         os.mkdir(path)
     start_time = datetime.now()
-    sensor_name = f"{autoencoder_model.split(os.sep)[-1].removesuffix('.pth')}-{mlp_path.split(os.sep)[-1].removesuffix('.pth')}-{start_time.strftime('%Y-%m-%d-%H-%M-%S')}"
+    if mlp_path is None:
+        sensor_name = f"{autoencoder_model.split(os.sep)[-1].removesuffix('.pth')}-supervised-{start_time.strftime('%Y-%m-%d-%H-%M-%S')}"
+    else:
+        sensor_name = f"{autoencoder_model.split(os.sep)[-1].removesuffix('.pth')}-{mlp_path.split(os.sep)[-1].removesuffix('.pth')}-{start_time.strftime('%Y-%m-%d-%H-%M-%S')}"
 
     if not os.path.exists(os.path.join(path, sensor_name)):
         os.mkdir(os.path.join(path, sensor_name))
@@ -139,7 +157,7 @@ def fake_sensor(autoencoder_model: str, mlp_path: str, is_conditional: bool=Fals
                       f"Humidity: {humi} %\n",
                       f"Date: 1970-01-01 00:00:00.000000\n",
                       f"voltage,pad,gr,totalCurrent\n"]
-        volt_grid, p_curve, denoised = predict_curve(autoencoder_model, mlp_path, temp=temp, humi=humi, ramp_type=ramp_type, sensor_no=sensor_no, plot=False, is_conditional=is_conditional)
+        volt_grid, p_curve, denoised = predict_curve(autoencoder_model, mlp_path, temp=temp, humi=humi, ramp_type=ramp_type, sensor_no=sensor_no, plot=False, is_conditional=is_conditional, is_supervised=is_supervised)
         for v, i in zip(volt_grid, denoised):
             if v > 25:  # ignores below 25V
                 file_lines.append(f"{v},{10 ** i},{0},{10 ** i}\n")
@@ -180,9 +198,16 @@ if __name__ == "__main__":
     # autoencoder_model = "conditional_autoencoder_model/ivcvscans-2025-10-28-10-30-59/e95_l0.211.pth" # latent 8 + params 6
     # mlp_model = "env_to_latent_model/ivcvscans-2025-10-28-10-43-53-e2e/e108_l4.887.pth"
     
-    autoencoder_model = "conditional_autoencoder_model/ivcvscans-2025-10-28-11-02-38/e97_l0.305.pth" # latent 4 + params 6
-    mlp_model = "env_to_latent_model/ivcvscans-2025-10-28-11-15-26-e2e/e120_l6.899.pth"
+    # autoencoder_model = "conditional_autoencoder_model/ivcvscans-2025-10-28-11-02-38/e97_l0.305.pth" # latent 4 + params 6
+    # mlp_model = "env_to_latent_model/ivcvscans-2025-10-28-11-15-26-e2e/e120_l6.899.pth"
     
-    analysis_var = 'temp'  # 'temp' or 'humi'
-    path, sensor_name = fake_sensor(autoencoder_model, mlp_model, is_conditional=True, analysis_var=analysis_var)
+    # weight decay
+    autoencoder_model = "conditional_autoencoder_model/ivcvscans-2026-01-07-21-41-28/e999_l0.177.pth"
+    mlp_model = "env_to_latent_model/ivcvscans-2026-01-08-04-16-48-e2e/e999_l2.190.pth"
+    
+    # supervised
+    autoencoder_model = "conditional_autoencoder_model/ivcvscans-2026-01-08-11-23-54/e9999_l0.145.pth"
+    mlp_model = None
+    analysis_var = 'humi'  # 'temp' or 'humi'
+    path, sensor_name = fake_sensor(autoencoder_model, mlp_model, is_supervised=True, analysis_var=analysis_var)
     analyze_fake(path, sensor_name, analysis_var=analysis_var)

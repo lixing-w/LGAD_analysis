@@ -346,7 +346,11 @@ if __name__ == '__main__':
     # model_path = "conditional_autoencoder_model/ivcvscans-2025-10-28-10-30-59/e95_l0.211.pth" # latent 8 + params 6
     # mlp_path = "env_to_latent_model/ivcvscans-2025-10-28-10-43-53-e2e/e108_l4.887.pth"
     
-    model_path = "conditional_autoencoder_model/ivcvscans-2025-10-28-11-02-38/e97_l0.305.pth" # latent 4 + params 6
-    mlp_path = "env_to_latent_model/ivcvscans-2025-10-28-11-15-26-e2e/e120_l6.899.pth"
+    # model_path = "conditional_autoencoder_model/ivcvscans-2025-10-28-11-02-38/e97_l0.305.pth" # latent 4 + params 6
+    # mlp_path = "env_to_latent_model/ivcvscans-2025-10-28-11-15-26-e2e/e120_l6.899.pth"
+    
+    # weight decay
+    model_path = "conditional_autoencoder_model/ivcvscans-2026-01-07-21-41-28/e999_l0.177.pth"
+    mlp_path = "env_to_latent_model/ivcvscans-2026-01-08-04-16-48-e2e/e999_l2.190.pth"
 
     compare_mlp_vs_ground_truth_latent(model_path, mlp_path, latent_dim=4, is_conditional=True)

@@ -224,6 +224,12 @@ class EnvToLatent(nn.Module):
             nn.Linear(128, 256),
             nn.LeakyReLU(),
             nn.LayerNorm(256),
+            nn.Linear(256, 512),
+            nn.LeakyReLU(),
+            nn.LayerNorm(512),
+            nn.Linear(512, 256),
+            nn.LeakyReLU(),
+            nn.LayerNorm(256),
             nn.Linear(256, 128),
             nn.LeakyReLU(),
             nn.Linear(128, self.latent_dim),
@@ -339,4 +345,44 @@ class ConditionalDecoder(ConditionalAutoEncoder):
         # Concatenate latent vector with parameters for decoder input
         decoder_input = torch.cat([latent, params], dim=1)
         recons = self.decoder(decoder_input)
+        return recons[:, :, :self.max_seq_len]  # ensure output matches max_seq_len
+    
+    
+class Supervised(nn.Module):
+    # maps from env vars to curve directly with cnn
+    def __init__(self, max_seq_len):
+        super().__init__()
+        
+        self.decoder_input_dim = 6  # [temp, date, humi, ramp_type, dura, sensor_num]
+        self.max_seq_len = max_seq_len
+        self.flattened_dim = 256 * (max_seq_len // 8 +1)
+        self.latent_dim = 0
+        self.cnn_out = torch.zeros(1, 256, max_seq_len // 8 +1)  # dummy, shape after cnn layers
+        self.decoder = nn.Sequential(
+                nn.Linear(self.decoder_input_dim, 128), 
+                nn.LeakyReLU(),
+                nn.LayerNorm(128),
+                nn.Linear(128, self.flattened_dim),
+                nn.Unflatten(1, (self.cnn_out.shape[1], self.cnn_out.shape[2])),
+                nn.ConvTranspose1d(256, 128, 3, stride=2, padding=1, output_padding=0),
+                nn.LeakyReLU(),
+                nn.LayerNorm([128, max_seq_len // 4]),
+                nn.ConvTranspose1d(128, 128, 3, stride=2, padding=1, output_padding=1),
+                nn.LeakyReLU(),
+                nn.LayerNorm([128, max_seq_len // 2]),
+                nn.ConvTranspose1d(128, 32, 3, stride=2, padding=1, output_padding=1),
+                nn.LeakyReLU(),
+                nn.ConvTranspose1d(32, 2, 3, stride=1, padding=1, output_padding=0), # 2 output channels, 1 for current, 1 for end_prob
+            )
+    
+    def forward(self, ivcurve, params):
+        """
+        Forward pass for supervised model
+        
+        Parameters
+        ----------
+        params : torch.Tensor
+            Environmental parameters [temp, date, humi, ramp_type, dura, sensor_num]
+        """
+        recons = self.decoder(params)
         return recons[:, :, :self.max_seq_len]  # ensure output matches max_seq_len
