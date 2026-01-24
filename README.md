@@ -48,7 +48,7 @@ ML methods involve several pathways.
     by non-ML methods, which are not robust for now. And we don't have 
     a lot of data.
 
-The primary method I'm using is autoencoders.
+The primary method we are using is autoencoders.
 
 Using autoencoders gives us the advantage of preserving more useful and 
 detailed information from IV curves to construct correlation. They 
@@ -68,37 +68,6 @@ conveniently in the future. Finally, autoencoders can convert variable
 -length IV sequences to a fixed-length latent vector, which is convenient 
 for analysis. 
 
-However, as of now, the autoencoder has a simple architecture, and 
-explanability of the network and the latent may not be promising. I tried 
-to make the latent space more interpreble by using a regressor, which 
-predicts env var labels based on latent, in training, to nudge the model 
-encode information in a more physically meaningful way. The effectiveness 
-of such nudge is subject to evaluation. Further, the autoencoder is 1D-CNN 
-based, which can only handle fix-length sequences. Hence the database is 
-padded to the longest sequence by adding trailing 0. If the longest length 
-changes because we obtained more scans or something, we must either truncate 
-the sequence, or train a different model.
-
-We don't have too many IV scans to learn (e.g. only around 400 good scans 
-in ./data/ivcvscans); we lack information about the architecture and 
-parameters (such as doping concentration) of the LGADs themselves;
-we lack information on humidity and measurement duration of many scans; 
-significantly unbalanced data distribution seriously deteriorates the model's 
-predictive power.
-Some changes were made to some same 
-LGAD between scans, and we have no good way of quantifying these changes 
-other than knowing the scans took place on different dates.
-The data is not ideal, still, we will see what correlations we can
-explore between environment variables and IV behaviors.
-
-The autoencoder has a latent dimension of 20 for now. Generally, larger 
-dimension means better reconstruction, but smaller dimension means 
-better information extraction and less risks of overfitting. This number is 
-determined after experimentation, to provide better reconstruction precision. 
-Future work on improving reconstruction should focus on balancing 
-data distribution, taking more IV scans to learn, performing data augmentation,
-or seeking physics based simulations instead of solely learning the scans.
-
 # Structure of the project
     Scripts:
     analyze.py    - script for analysis and plotting with non-ML methods
@@ -106,16 +75,18 @@ or seeking physics based simulations instead of solely learning the scans.
     dataset.py    - defines several datasets for ML
     preprocess.py - lib containing functions to prepare the data for ML
     model.py      - defines pytorch models
-    train_autoencoder.py - trains autoencoder to compress IV curve
+    train_autoencoder.py - trains autoencoder to learn IV curve
     visualize_latent.py  - visualize the latent space w/ environmental variables
     train_env_to_latent.py - trains an MLP to predict latent from env vars
-    train.py      - trains a sensor-specific MLP to predict IV curve from 
+    train_mlp.py      - trains a sensor-specific MLP to predict IV curve from 
                     temperature, a baseline model separate from autoencoders
 
     Folders:
     archive_code  - some old code created before Summer 2025, not used for now
     autoencoder_model - stores trained autoencoders
-    model         - stores trained MLP for pathway 1
+    conditional_autoencoder_model - stores trained conditional autoencoders
+    supervised - stores trained supervised CNN models for pathway 1
+    mlp         - stores trained MLP for pathway 1
     env_to_latent_model - stores trained MLP for pathway 2
     data          - contains all databases
     miscellaneous - miscellaneous files and data

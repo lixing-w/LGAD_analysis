@@ -126,7 +126,7 @@ def predict_curve(autoencoder_model: str, mlp_path: str, temp=None, humi=None, r
 
 def fake_sensor(autoencoder_model: str, mlp_path: str, is_conditional: bool=False, is_supervised: bool=False, analysis_var='temp'):
     # make fake IV scans based on given models
-    path = "./fake_sensors"
+    path = "./predictions"
     if not os.path.exists(path):
         os.mkdir(path)
     start_time = datetime.now()
@@ -172,7 +172,6 @@ def fake_sensor(autoencoder_model: str, mlp_path: str, is_conditional: bool=Fals
 
 
 def analyze_fake(path, sensor_name, analysis_var='temp'):
-    # needs to temporarily modify DATABASE_DIR to "./fake_sensors"
     sensor = Sensor(sensor_name, database=path)
     analyze_sensor_iv(sensor, var=analysis_var)
 
